@@ -1,27 +1,14 @@
 <template>
   <div>
-    <li v-for="stuff in form">  
-      {{ stuff }}
-    </li>
-    <form @submit.prevent="">
-      <input type="text" v-model="form.username">
-      <input type="password" v-model="form.password">
-      <button type="submit">Submit</button>
-    </form>
+    <TheMaze></TheMaze>
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue';
-  const form =  reactive({
-    username:"",
-    password:""
-  })
-  function logUsernamePassword()
-  {
+  import TheMaze from '@/components/TheMaze.vue';
 
-  }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+
 </style>

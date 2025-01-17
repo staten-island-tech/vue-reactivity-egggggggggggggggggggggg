@@ -1,16 +1,14 @@
 <template>
   <div>
-    <h1>Sudoku</h1>
-    <form>
-      
-    </form>
+    <TheMaze></TheMaze>
   </div>
 </template>
 
 <script setup>
-
+  import TheMaze from '@/components/TheMaze.vue';
+  
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
 </style>
