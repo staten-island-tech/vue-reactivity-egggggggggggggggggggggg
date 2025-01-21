@@ -1,14 +1,16 @@
 <template>
   <div>
-    <TheMaze></TheMaze>
+    <SecondMaze></SecondMaze>
   </div>
 </template>
 
 <script setup>
-  import TheMaze from '@/components/TheMaze.vue';
+  import SecondMaze from './components/SecondMaze.vue';
   
 </script>
 
-<style lang="scss" scoped>
-
+<style scoped>
+  body{
+    background-color: white;
+  }
 </style>
