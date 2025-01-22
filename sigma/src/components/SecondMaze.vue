@@ -29,7 +29,7 @@
         <form @submit.prevent="" @change="changeAlgorithm">
             <select v-model="selectedAlgorithm">
                 <option value="kruskal">Khruskal's Algorithm</option>
-                <option value="rngdfs">Randomized DFS(Could be Infinite)</option>
+                <option value="rngdfs">Randomized DFS(Possibly Unsolvable)</option>
                 <option value="back_recursive">Recursive Backtracker</option>
                 <option value="treegrow">Growing Tree</option>
                 <option value="huntkill">Hunt and Kill</option>
@@ -84,6 +84,7 @@
     }
     function cordString(coords){return `${coords[0]},${coords[1]}`};
     function stringCord(string){return string.split(",").map(num=> parseInt(num, 10))};
+    function isEqualNodes(node1, node2){return node1[0]==node2[0]&&node1[1]==node2[1]};
     async function prim_generation()
     {
         //get a random point first 
@@ -117,7 +118,7 @@
             current_neighbor =  new_neighbor;
             visitied_nodes.push(new_neighbor);
             steps+=1;
-            if(visualize == true){await delay(10);}
+            if(visualize == true){await delay(20);}
         }
         console.log(`took ${steps} steps`)
         console.log(cell_container)
@@ -171,10 +172,12 @@
     {
         const neighbors = []
         //Check if neighbors are less than 0,19 or smth 
+        console.log("Checking neighbors for:", cord_x, cord_y);
         neighbors.push([cord_x-1, cord_y]);
         neighbors.push([cord_x+1, cord_y]);
         neighbors.push([cord_x, cord_y+1]);
         neighbors.push([cord_x, cord_y-1]);
+        console.log("Neighbors before filtering:", neighbors, cord_x, cord_y);
         const possible_neighbors = neighbors.filter(item=>
             {
                 if(item[0]<0 || item[1]<0)
@@ -189,14 +192,10 @@
                 {
                     return false
                 }
-                if(removeSetNeighbors==false)
-                {
-                    //Check for walls instead thne
-                    
-                }
                 return true;
             }
         )
+        console.log("Filtered neighbors:", possible_neighbors);
         return possible_neighbors;
     }
     function generate_random_start_end()
@@ -268,23 +267,10 @@
         //starting point is first node in liost 
         const start_node = stringCord(selected_nodes[0]);
         const end_node =  stringCord(selected_nodes[1]);
-        console.log(selected_nodes)
         let current_node = start_node;
-        const neighbors =  get_neighbors(start_node[0], start_node[1], false);
-        neighbors.forEach(neighbor=>
-        {
-            console.log(end_node, neighbor)
-            if(neighbor[0]==end_node[0] && neighbor[1]==end_node[1])
-            {
-                
-                console.log("end node reached")
-                return
-            }
-        }
-        )
+
     }
 </script>
-
 <style scoped>
     .maze_container
     {
