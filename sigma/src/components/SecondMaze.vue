@@ -17,7 +17,7 @@
     <div> 
         <form @submit.prevent>
             <button type="button" @click="doSomething" >Visualize New Generation</button>
-            <button type="button" @click="bruteForceSolve">Solve Maze</button>
+            <button type="button" @click="">Solve Maze</button>
         </form>
         <form @submit.prevent="" @change="changeDifficulty">
             <select v-model="selectedDifficulty">
@@ -42,13 +42,40 @@
 <script setup>  
     //note x =  column and y = row
     //in divs its x, y format
-    import { ref, onMounted} from 'vue';import { parse } from 'vue/compiler-sfc';
-;
+    import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
     const node_size = 40;
-
     const cell_container = {}; 
+    let selected_nodes = [];
+    let visitied_nodes = [];
+    const selectedDifficulty =  ref("Medium");
+    const selectedAlgorithm =  ref("rngdfs");
+    let visualize = false;
+    const containerKey = ref(0);
+    const axis_reference = {
+        0: 
+        {
+            maxWall:"left",
+            minWall:"right",
+            maxStyle:"borderLeft",
+            minStyle:"borderRight"
+        },
+        1:
+        {
+            maxWall:"top",
+            minWall:"bottom",
+            maxStyle:"borderTop",
+            minStyle:"borderBottom",
+        }
+    }
+    onMounted(()=>
+    {
+        console.time("timer1");
+        generate_grid();
+        prim_generation()
+        console.timeEnd("timer1")
+    })
     function assign_cords(square_position)
     {
         const row = Math.ceil(square_position/(width/node_size))-1;
@@ -76,54 +103,22 @@
             cell_container[y] = row
         }
     }
-    generate_grid();
-    let visitied_nodes = [];
     function delay(ms)
     {
         return new Promise(resolve=>setTimeout(resolve, ms))
     }
-    function cordString(coords){return `${coords[0]},${coords[1]}`};
-    function stringCord(string){return string.split(",").map(num=> parseInt(num, 10))};
-    function isEqualNodes(node1, node2){return node1[0]==node2[0]&&node1[1]==node2[1]};
-    async function prim_generation()
+    function cordString(coords)
     {
-        //get a random point first 
-        const random_x = Math.floor(Math.random() * (width/node_size));
-        const random_y = Math.floor(Math.random() * (height/node_size));
-        const random_node = document.querySelector(`[data-coordinates="${random_x},${random_y}"]`);
-        visitied_nodes.push([random_x, random_y]);
-        random_node.style.background = "white";
-        let current_neighbor = [random_x, random_y];
-        let steps = 0;
-        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        while(visitied_nodes.length!=((width/node_size)*(height/node_size)))
-        {
-            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
-            current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
-            new_neighbors.forEach(neighbor_item =>{
-                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
-            })
-
-            if(new_neighbors.length==0)
-            {
-                current_neighbor = visitied_nodes[Math.floor(Math.random()*visitied_nodes.length)];
-                steps+=1
-                continue;
-            }
-            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
-            new_neighbor_element.style.background = "green"
-            combine_walls(current_neighbor, new_neighbor);
-            current_neighbor =  new_neighbor;
-            visitied_nodes.push(new_neighbor);
-            steps+=1;
-            if(visualize == true){await delay(20);}
-        }
-        console.log(`took ${steps} steps`)
-        console.log(cell_container)
-        
-    }
+        return `${coords[0]},${coords[1]}`
+    };
+    function stringCord(string)
+    {
+        return string.split(",").map(num=> parseInt(num, 10))
+    };
+    function isEqualNodes(node1, node2)
+    {
+        return node1[0]==node2[0]&&node1[1]==node2[1]
+    };
     function wall_check(a,b)
     {
         if(a[0]===b[0])
@@ -143,22 +138,6 @@
             }
         }
     }
-    const axis_reference = {
-        0: 
-        {
-            maxWall:"left",
-            minWall:"right",
-            maxStyle:"borderLeft",
-            minStyle:"borderRight"
-        },
-        1:
-        {
-            maxWall:"top",
-            minWall:"bottom",
-            maxStyle:"borderTop",
-            minStyle:"borderBottom",
-        }
-    }
     function combine_walls(a, b)
     {
         const {max, min, axis} =  wall_check(a, b);
@@ -171,13 +150,10 @@
     function get_neighbors(cord_x, cord_y, removeSetNeighbors)
     {
         const neighbors = []
-        //Check if neighbors are less than 0,19 or smth 
-        console.log("Checking neighbors for:", cord_x, cord_y);
         neighbors.push([cord_x-1, cord_y]);
         neighbors.push([cord_x+1, cord_y]);
         neighbors.push([cord_x, cord_y+1]);
         neighbors.push([cord_x, cord_y-1]);
-        console.log("Neighbors before filtering:", neighbors, cord_x, cord_y);
         const possible_neighbors = neighbors.filter(item=>
             {
                 if(item[0]<0 || item[1]<0)
@@ -195,26 +171,11 @@
                 return true;
             }
         )
-        console.log("Filtered neighbors:", possible_neighbors);
         return possible_neighbors;
     }
-    function generate_random_start_end()
-    {
-        //Only restriction is that the points must be on the boundary of the maze;
-    
-    }
-    onMounted(()=>
-    {
-        console.time("timer1");
-        prim_generation()
-        console.timeEnd("timer1")
-    })
-    const selectedDifficulty =  ref("Medium");
-    const selectedAlgorithm =  ref("rngdfs");
-    let visualize = false;
-    const containerKey = ref(0);
     async function changeAlgorithm()
     {
+
         if(selectedAlgorithm.value == "kruskal")
         {
         }
@@ -223,15 +184,17 @@
             await prim_generation();
         }
     }
+    function reset_maze()
+    {
+        containerKey.value+=1;
+        selected_nodes = [];
+        visitied_nodes.length = 0;
+        visualize = false;
+    }
     function changeDifficulty()
     {
         console.log(selectedDifficulty.value);
     }
-    function solveMaze()
-    {
-
-    }
-    let selected_nodes = [];
     async function doSomething()
     {
         containerKey.value+=1;
@@ -257,19 +220,44 @@
         }
         console.log(selected_nodes)
     }
-    function bruteForceSolve()
+    async function prim_generation()
     {
-        if(selected_nodes.length<2)
+        //get a random point first 
+        const random_x = Math.floor(Math.random() * (width/node_size));
+        const random_y = Math.floor(Math.random() * (height/node_size));
+        const random_node = document.querySelector(`[data-coordinates="${random_x},${random_y}"]`);
+        visitied_nodes.push([random_x, random_y]);
+        random_node.style.background = "white";
+        let current_neighbor = [random_x, random_y];
+        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
+        while(visitied_nodes.length!=((width/node_size)*(height/node_size)))
         {
-            console.log("Error please select two nodes to sovle")
-            return
-        }
-        //starting point is first node in liost 
-        const start_node = stringCord(selected_nodes[0]);
-        const end_node =  stringCord(selected_nodes[1]);
-        let current_node = start_node;
+            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
+            current_neighbor_element.style.background =  "green"
+            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
+            new_neighbors.forEach(neighbor_item =>{
+                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
+            })
 
-    }
+            if(new_neighbors.length==0)
+            {
+                current_neighbor = visitied_nodes[Math.floor(Math.random()*visitied_nodes.length)];
+                continue;
+            }
+            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
+            if(visualize == true){await delay(10);}
+            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
+            new_neighbor_element.style.background = "green"
+            combine_walls(current_neighbor, new_neighbor);
+            current_neighbor =  new_neighbor;
+            visitied_nodes.push(new_neighbor);
+
+        }
+        console.log(cell_container)
+        document.querySelectorAll(".grid_item").forEach(element => {
+            element.style.background = "green"
+        });
+    }    
 </script>
 <style scoped>
     .maze_container
