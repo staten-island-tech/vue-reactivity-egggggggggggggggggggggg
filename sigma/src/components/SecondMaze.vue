@@ -8,7 +8,7 @@
         <div 
             v-for="n in (width/node_size) * (height/node_size)":key="n"
             class="grid_item"
-            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`${node_size/10}px solid #FFFFFF`}"
+            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`${node_size/20}px solid #FFFFFF`}"
             :data-coordinates="`${assign_cords(n).column},${assign_cords(n).row}`"
         >
 
@@ -28,8 +28,8 @@
         </form>
         <form @submit.prevent="" @change="changeAlgorithm">
             <select v-model="selectedAlgorithm">
-                <option value="kruskal">Khruskal's Algorithm</option>
-                <option value="rngdfs">Randomized DFS(Possibly Unsolvable)</option>
+                <option value="kruskal">Kruskal's Algorithm</option>
+                <option value="rngdfs">Randomized DFS</option>
                 <option value="back_recursive">Recursive Backtracker</option>
                 <option value="treegrow">Growing Tree</option>
                 <option value="huntkill">Hunt and Kill</option>
@@ -45,7 +45,8 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    const node_size = 40;
+    const node_size = 80;
+    let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
     let visitied_nodes = [];
@@ -197,12 +198,15 @@
     }
     async function doSomething()
     {
+        if(running==true){return};
+        running=true;
         containerKey.value+=1;
         visitied_nodes.length = 0;
         selected_nodes = [];
         visualize = true
         await changeAlgorithm();
         visualize = false;
+        running=false;
     }
     function findNearestSquare(event)
     {
@@ -245,7 +249,7 @@
                 continue;
             }
             const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize == true){await delay(10);}
+            if(visualize == true){await delay(1);}
             const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
             new_neighbor_element.style.background = "green"
             combine_walls(current_neighbor, new_neighbor);
@@ -258,6 +262,10 @@
             element.style.background = "green"
         });
     }    
+    function solvePoints()
+    {
+
+    }
 </script>
 <style scoped>
     .maze_container
@@ -267,5 +275,15 @@
         height:800px;
         background: black;
     }
-
+    button[type="button"]
+    {
+        border-radius: 5px;
+        border:none;
+        margin: 10px;
+        width:300px;
+        height:30px;
+        background:orange;
+        font-family: 'Lucida Sans', 'Lucida Sans Regular',
+         'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;;
+    }
 </style>
