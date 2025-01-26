@@ -1,4 +1,5 @@
 <template>
+    <div class="functional_container">
     <div class="maze_container" :key="containerKey"
     :style="{
         gridTemplateRows:  `repeat(${width/node_size},${node_size}px)`,
@@ -8,25 +9,25 @@
         <div 
             v-for="n in (width/node_size) * (height/node_size)":key="n"
             class="grid_item"
-            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`${node_size/20}px solid #FFFFFF`}"
+            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`${node_size/40}px solid #FFFFFF`}"
             :data-coordinates="`${assign_cords(n).column},${assign_cords(n).row}`"
         >
 
         </div>
     </div>
-    <div> 
+    <div class="options_menu"> 
         <form @submit.prevent>
-            <button type="button" @click="doSomething" >Visualize New Generation</button>
-            <button type="button" @click="">Solve Maze</button>
+            <button type="button" @click="doSomething" >Regenerate</button>
+            <button type="button" @click="">Solve Points</button>
         </form>
-        <form @submit.prevent="" @change="changeDifficulty">
+        <form @submit.prevent="" @change="changeDifficulty" class="change_difficulty">
             <select v-model="selectedDifficulty">
                 <option value="Hard">Hard</option>
                 <option value="Medium">Medium</option>
                 <option value="Easy">Easy</option>
             </select>
         </form>
-        <form @submit.prevent="" @change="changeAlgorithm">
+        <form @submit.prevent="" @change="changeAlgorithm" class="change_algorithm">
             <select v-model="selectedAlgorithm">
                 <option value="kruskal">Kruskal's Algorithm</option>
                 <option value="rngdfs">Randomized DFS</option>
@@ -37,6 +38,7 @@
                 <option value="eller">Eller's</option>
             </select>
         </form>
+    </div>
     </div>
 </template>
 <script setup>  
@@ -49,7 +51,7 @@
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
-    let visitied_nodes = [];
+    let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
     const selectedAlgorithm =  ref("rngdfs");
     let visualize = false;
@@ -72,10 +74,8 @@
     }
     onMounted(()=>
     {
-        console.time("timer1");
         generate_grid();
-        prim_generation()
-        console.timeEnd("timer1")
+        EllerAttempt();
     })
     function assign_cords(square_position)
     {
@@ -165,7 +165,7 @@
                 {
                     return false
                 }
-                if((new Set(visitied_nodes.map(JSON.stringify))).has(JSON.stringify(item)) && removeSetNeighbors!=false)
+                if((new Set(visited_nodes.map(JSON.stringify))).has(JSON.stringify(item)) && removeSetNeighbors!=false)
                 {
                     return false
                 }
@@ -189,7 +189,7 @@
     {
         containerKey.value+=1;
         selected_nodes = [];
-        visitied_nodes.length = 0;
+        visited_nodes.length = 0;
         visualize = false;
     }
     function changeDifficulty()
@@ -201,7 +201,7 @@
         if(running==true){return};
         running=true;
         containerKey.value+=1;
-        visitied_nodes.length = 0;
+        visited_nodes.length = 0;
         selected_nodes = [];
         visualize = true
         await changeAlgorithm();
@@ -229,12 +229,11 @@
         //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size));
         const random_y = Math.floor(Math.random() * (height/node_size));
-        const random_node = document.querySelector(`[data-coordinates="${random_x},${random_y}"]`);
-        visitied_nodes.push([random_x, random_y]);
-        random_node.style.background = "white";
+        visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
         //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        while(visitied_nodes.length!=((width/node_size)*(height/node_size)))
+        const unvisted_nodes = JSON.parse(JSON.stringify(cell_container))
+        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
             current_neighbor_element.style.background =  "green"
@@ -242,19 +241,18 @@
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
             })
-
-            if(new_neighbors.length==0)
+            if(new_neighbors.length==0)//Improve this 
             {
-                current_neighbor = visitied_nodes[Math.floor(Math.random()*visitied_nodes.length)];
+                current_neighbor = visited_nodes[Math.floor(Math.random()*visited_nodes.length)];
                 continue;
             }
             const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize == true){await delay(1);}
+            if(visualize == true){await delay(10);}
             const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
             new_neighbor_element.style.background = "green"
             combine_walls(current_neighbor, new_neighbor);
             current_neighbor =  new_neighbor;
-            visitied_nodes.push(new_neighbor);
+            visited_nodes.push(new_neighbor);
 
         }
         console.log(cell_container)
@@ -262,7 +260,29 @@
             element.style.background = "green"
         });
     }    
-    function solvePoints()
+    function retyped_prims()
+    {
+        const random_x = Math.floor(Math.random() * (width/node_size));
+        const random_y = Math.floor(Math.random() * (height/node_size));
+        visited_nodes.push([random_x, random_y]);
+        let current_neighbor = [random_x, random_y];
+        let frontier_cells = [];
+        
+
+        //Start with a random point
+
+    }
+    function EllerAttempt()
+    {
+        //get the first row        //randomly join the cells and ensure they belong to different sets 
+        const row_length =  width/node_size;
+        const random_cells = Math.floor(Math.random() * (row_length-1)+1)//Make sure there is atleast one set fuse that happens
+        for(let i = 0; i<random_cells;i++)
+        {
+            console.log("something") 
+        }
+    }
+    function fixBorderStylings()
     {
 
     }
@@ -280,10 +300,28 @@
         border-radius: 5px;
         border:none;
         margin: 10px;
-        width:300px;
+        width:200px;
         height:30px;
         background:orange;
         font-family: 'Lucida Sans', 'Lucida Sans Regular',
-         'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;;
+         'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        
+    }
+    .options_menu
+    {
+        background-color: white;
+        align-items: center;
+        text-align: center;
+        border-bottom-right-radius: 30px;
+        border-bottom-left-radius: 30px;
+    }
+    .change_algorithm 
+    {
+        border-radius: 0px;
+
+    }
+    .change_difficulty
+    {
+        border-radius: 0px; 
     }
 </style>
