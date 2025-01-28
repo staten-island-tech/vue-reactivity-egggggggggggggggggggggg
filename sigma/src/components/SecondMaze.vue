@@ -83,7 +83,7 @@
     onMounted(()=>
     {
         generate_grid(true);
-        retyped_prims();
+        prim_generation();
     })
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
@@ -277,6 +277,8 @@
     async function retyped_prims()//Attempt 2
     {
         //Works by selecting a frontier cell and finding the next node part of the set of visited nodes closest to frontier cell
+        //green =  visited
+        //red = frontiers
         const frontier_cells = [];
         const random_x = Math.floor(Math.random() * (width/node_size));
         const random_y = Math.floor(Math.random() * (height/node_size));
@@ -294,30 +296,35 @@
                 document.querySelector(`[data-coordinates="${cordString(neighbor_item)}"]`).style.background = "red"
                 frontier_cells.push(neighbor_item);
             })
+        
             const rFrontIndex = Math.floor(Math.random()*frontier_cells.length);
             const rFrontCell =  frontier_cells[rFrontIndex];
+            console.log(rFrontCell, rFrontIndex, fronter)
             const frontier_neighbors = get_neighbors(rFrontCell[0], rFrontCell[1], false);
-            frontier_neighbors.forEach(item=>
-                {
-                    console.log(item, visited_nodes)
-                    if(JSON.stringify(visited_nodes).includes(JSON.stringify(item)))//This isnt the problem
+            for(let a = 0; a<frontier_neighbors.length; a++)
+            {
+                if(JSON.stringify(visited_nodes).includes(JSON.stringify(frontier_neighbors[a])))//This isnt the problem
                     {
-                        const AdjFrontIndex = findArray(visited_nodes,item);
+                        const AdjFrontIndex = findArray(visited_nodes,frontier_neighbors[a]);
                         //We have the connection node now
                         //Will always find an adjacent set node      
-                        manipulate_walls(item, visited_nodes[AdjFrontIndex]);
-
+                        
+                        manipulate_walls(frontier_neighbors[a], visited_nodes[AdjFrontIndex]);
+                        current_neighbor = frontier_neighbors[a];
+                        visited_nodes.push(rFrontCell);
+                        frontier_cells.splice(rFrontIndex,1);
+                        console.log("terminated")
+                        break;
+        
                     };
-                }
-            )
+            }
+            console.log("YAY")
             //If we dont have any more frontier cells then randomly select a frontier cell;
 
             //Implement frontier logic here
         }
         console.log(cell_container) 
-        document.querySelectorAll(".grid_item").forEach(element => {
-            element.style.background = "green"
-        });
+
     }
     function findArray(nestedArray, array)
     {
@@ -328,6 +335,44 @@
         )
         return itemIndex;
     }
+    function RBT()
+    {
+                //get a random point first 
+        const random_x = Math.floor(Math.random() * (width/node_size));
+        const random_y = Math.floor(Math.random() * (height/node_size));
+        visited_nodes.push([random_x, random_y]);
+        let current_neighbor = [random_x, random_y];
+        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
+        const unvisted_nodes = JSON.parse(JSON.stringify(cell_container))
+        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
+        {
+            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
+            current_neighbor_element.style.background =  "green"
+            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
+            new_neighbors.forEach(neighbor_item =>{
+                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
+            })
+            if(new_neighbors.length==0)//Improve this 
+            {
+                current_neighbor = visited_nodes[Math.floor(Math.random()*visited_nodes.length)];
+                continue;
+            }
+            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
+            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
+            new_neighbor_element.style.background = "green"
+            manipulate_walls(current_neighbor, new_neighbor, false);
+            current_neighbor =  new_neighbor;
+            visited_nodes.push(new_neighbor);
+
+        }
+        console.log(cell_container)
+        document.querySelectorAll(".grid_item").forEach(element => {
+            element.style.background = "green"
+        });
+
+    }
+
+
     function EllerAttempt()
     {
         //get the first row        
@@ -340,15 +385,6 @@
             
         }
     }
-    function fixBorderStylings()
-    {
-
-    }
-    //Fix Prim algorithm
-    //Do Eller
-    //Condense or make some code more reusable
-    //Maze solver(prob gonna do at the end)
-    //Styling at the very end.
 
 
 </script>
