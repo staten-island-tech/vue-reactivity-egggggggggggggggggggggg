@@ -56,6 +56,7 @@
     const selectedAlgorithm =  ref("rngdfs");
     let visualize = false;
     const containerKey = ref(0);
+    
     const axis_reference = {
         0: 
         {
@@ -72,18 +73,22 @@
             minStyle:"borderBottom",
         }
     }
+    function removeGrid(){
+
+    }
+
     onMounted(()=>
     {
-        generate_grid();
-        EllerAttempt();
+        generate_grid(true);
+        retyped_prims();
     })
-    function assign_cords(square_position)
+    function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
         const row = Math.ceil(square_position/(width/node_size))-1;
         const column =  square_position - ((Math.ceil(square_position/(width/node_size)) - 1)*(height/node_size))-1;
         return { column, row }
     }
-    function generate_grid()
+    function generate_grid(border)//Border determines whether walls are generated. if true yes otherwise nah
     {
         for(let y = 0; y<height/node_size; y++)
         {
@@ -94,33 +99,33 @@
                     x:x,
                     y:y,
                     walls:{
-                        left:true,
-                        right:true, 
-                        top:true,
-                        bottom:true, 
+                        left:border,
+                        right:border, 
+                        top:border,
+                        bottom:border, 
                     }
                 }
             }
             cell_container[y] = row
         }
     }
-    function delay(ms)
+    function delay(ms)//Delay function utilizing promise
     {
         return new Promise(resolve=>setTimeout(resolve, ms))
     }
-    function cordString(coords)
+    function cordString(coords)//Convert cord to string
     {
         return `${coords[0]},${coords[1]}`
     };
-    function stringCord(string)
+    function stringCord(string)//Same thing but string to cord now
     {
         return string.split(",").map(num=> parseInt(num, 10))
     };
-    function isEqualNodes(node1, node2)
+    function isEqualNodes(node1, node2)//Checks if cords are equal, might remove
     {
         return node1[0]==node2[0]&&node1[1]==node2[1]
     };
-    function wall_check(a,b)
+    function wall_check(a,b)//Checks two cords and return what walls to modify or check
     {
         if(a[0]===b[0])
         {
@@ -139,16 +144,19 @@
             }
         }
     }
-    function combine_walls(a, b)
+    function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
     {
+        const adadada = ""
         const {max, min, axis} =  wall_check(a, b);
         const axis_change = axis_reference[axis];
         document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = "none";
         document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = "none";
-        cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  false;
-        cell_container[min[0]][min[1]].walls[axis_change.minWall] = false;
+        `${node_size/40}px; solid; #FFFFFF;`
+
+        cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
+        cell_container[min[0]][min[1]].walls[axis_change.minWall] = add;
     }
-    function get_neighbors(cord_x, cord_y, removeSetNeighbors)
+    function get_neighbors(cord_x, cord_y, removeSetNeighbors)//Return neighbors of a given cord, could prob remove having to add two cords
     {
         const neighbors = []
         neighbors.push([cord_x-1, cord_y]);
@@ -174,7 +182,7 @@
         )
         return possible_neighbors;
     }
-    async function changeAlgorithm()
+    async function changeAlgorithm()//Async algo cuz im using delay to make it easier for user to see the cvhanges happen
     {
 
         if(selectedAlgorithm.value == "kruskal")
@@ -182,21 +190,22 @@
         }
         else if(selectedAlgorithm.value == "rngdfs")
         {
-            await prim_generation();
+            await retyped_prims();
         }
+        //Grid_generation will be based on whether the algorithm calls for
     }
-    function reset_maze()
+    function reset_maze()//Resets everything back to a clean slate in a single function 
     {
         containerKey.value+=1;
         selected_nodes = [];
         visited_nodes.length = 0;
         visualize = false;
     }
-    function changeDifficulty()
+    function changeDifficulty()//Just changes the node size thats really it
     {
         console.log(selectedDifficulty.value);
     }
-    async function doSomething()
+    async function doSomething()//Visualizier for the current algorithm
     {
         if(running==true){return};
         running=true;
@@ -208,7 +217,7 @@
         visualize = false;
         running=false;
     }
-    function findNearestSquare(event)
+    function findNearestSquare(event)//Finds the current square the user has clicked on
     {
         const gridItem = event.target.closest(".grid_item");
         const node_point = gridItem.dataset.coordinates;
@@ -224,7 +233,7 @@
         }
         console.log(selected_nodes)
     }
-    async function prim_generation()
+    async function prim_generation()//Idk if this is even Prim's anymore
     {
         //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size));
@@ -250,7 +259,7 @@
             if(visualize == true){await delay(10);}
             const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
             new_neighbor_element.style.background = "green"
-            combine_walls(current_neighbor, new_neighbor);
+            manipulate_walls(current_neighbor, new_neighbor, false);
             current_neighbor =  new_neighbor;
             visited_nodes.push(new_neighbor);
 
@@ -260,32 +269,86 @@
             element.style.background = "green"
         });
     }    
-    function retyped_prims()
+
+
+    async function retyped_prims()//Attempt 2
     {
+        //Works by selecting a frontier cell and finding the next node part of the set of visited nodes closest to frontier cell
+        const frontier_cells = [];
         const random_x = Math.floor(Math.random() * (width/node_size));
         const random_y = Math.floor(Math.random() * (height/node_size));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
-        let frontier_cells = [];
-        
+        //Make two arrays one for visited_nodes and one for frontier cells;
+        //Conditional that if visited_cells != the total amount of nodes continue running 
+        //while(visited_cells.length!=amount_of_nodes){}
+        for(let i = 0; i<100; i++)
+        {
+            const current_neighbor_element =  document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`)
+            current_neighbor_element.style.background =  "green"
+            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
+            //This is purely visual ignore it
 
-        //Start with a random point
 
+            //Just create frontier nodes using neighbors
+            //then select a random frontier node 
+            //since frontier node is adjacent to set we looking for adjacemt set node to connec to
+            //some other stuff idk
+            //connecft them 
+            //repeat 
+            new_neighbors.forEach(neighbor_item =>{
+                document.querySelector(`[data-coordinates="${cordString(neighbor_item)}"]`).style.background = "red"
+                frontier_cells.push(neighbor_item);
+            })
+            const rFrontIndex = Math.floor(Math.random()*frontier_cells.length);
+            const rFrontCell =  frontier_cells[rFrontIndex];
+            const frontier_neighbors = get_neighbors(rFrontCell[0], rFrontCell[1], true);
+            frontier_neighbors.forEach(item=>
+                {
+                    JSON.stringify(frontier_cells).includes(frontier_neighbor)
+                }
+            )
+            //Implement frontier logic here
+            
+            const new_neighbor = new_neighbors[Math.floor(Math.random() * new_neighbors.length)];
+            const splice_index = frontier_cells.indexOf(new_neighbor);
+            frontier_cells.splice(splice_index,1);
+            manipulate_walls(current_neighbor, new_neighbor, false);
+            //For this random frontier_cell we take the current node and use that to establish a wall.
+            if(visualize == true){await delay(100);}
+            const new_neighbor_element = document.querySelector(`[data-coordinates="${cordString(new_neighbor)}"]`)
+            new_neighbor_element.style.background = "green"
+            current_neighbor =  new_neighbor;
+            visited_nodes.push(new_neighbor);
+        }
+        console.log(cell_container) 
+        document.querySelectorAll(".grid_item").forEach(element => {
+            element.style.background = "green"
+        });
     }
     function EllerAttempt()
     {
-        //get the first row        //randomly join the cells and ensure they belong to different sets 
+        //get the first row        
+        // //randomly join the cells and ensure they belong to different sets 
         const row_length =  width/node_size;
         const random_cells = Math.floor(Math.random() * (row_length-1)+1)//Make sure there is atleast one set fuse that happens
+
         for(let i = 0; i<random_cells;i++)
         {
-            console.log("something") 
+            
         }
     }
     function fixBorderStylings()
     {
 
     }
+    //Fix Prim algorithm
+    //Do Eller
+    //Condense or make some code more reusable
+    //Maze solver(prob gonna do at the end)
+    //Styling at the very end.
+
+
 </script>
 <style scoped>
     .maze_container
