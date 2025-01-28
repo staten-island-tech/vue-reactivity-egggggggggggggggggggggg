@@ -38,6 +38,9 @@
                 <option value="eller">Eller's</option>
             </select>
         </form>
+        <form>
+            <input type="number" min="10" step="10" v-model="delayTime">Delay
+        </form>
     </div>
     </div>
 </template>
@@ -47,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    const node_size = 80;
+    const node_size = 20;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -56,7 +59,7 @@
     const selectedAlgorithm =  ref("rngdfs");
     let visualize = false;
     const containerKey = ref(0);
-    
+    const delayTime = ref(100);
     const axis_reference = {
         0: 
         {
@@ -190,7 +193,7 @@
         }
         else if(selectedAlgorithm.value == "rngdfs")
         {
-            await retyped_prims();
+            await prim_generation();
         }
         //Grid_generation will be based on whether the algorithm calls for
     }
@@ -256,7 +259,7 @@
                 continue;
             }
             const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize == true){await delay(10);}
+            if(visualize == true){await delay(delayTime.value);}
             const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
             new_neighbor_element.style.background = "green"
             manipulate_walls(current_neighbor, new_neighbor, false);
@@ -287,44 +290,43 @@
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`)
             current_neighbor_element.style.background =  "green"
             const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
-            //This is purely visual ignore it
-
-
-            //Just create frontier nodes using neighbors
-            //then select a random frontier node 
-            //since frontier node is adjacent to set we looking for adjacemt set node to connec to
-            //some other stuff idk
-            //connecft them 
-            //repeat 
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${cordString(neighbor_item)}"]`).style.background = "red"
                 frontier_cells.push(neighbor_item);
             })
             const rFrontIndex = Math.floor(Math.random()*frontier_cells.length);
             const rFrontCell =  frontier_cells[rFrontIndex];
-            const frontier_neighbors = get_neighbors(rFrontCell[0], rFrontCell[1], true);
+            const frontier_neighbors = get_neighbors(rFrontCell[0], rFrontCell[1], false);
             frontier_neighbors.forEach(item=>
                 {
-                    JSON.stringify(frontier_cells).includes(frontier_neighbor)
+                    console.log(item, visited_nodes)
+                    if(JSON.stringify(visited_nodes).includes(JSON.stringify(item)))//This isnt the problem
+                    {
+                        const AdjFrontIndex = findArray(visited_nodes,item);
+                        //We have the connection node now
+                        //Will always find an adjacent set node      
+                        manipulate_walls(item, visited_nodes[AdjFrontIndex]);
+
+                    };
                 }
             )
+            //If we dont have any more frontier cells then randomly select a frontier cell;
+
             //Implement frontier logic here
-            
-            const new_neighbor = new_neighbors[Math.floor(Math.random() * new_neighbors.length)];
-            const splice_index = frontier_cells.indexOf(new_neighbor);
-            frontier_cells.splice(splice_index,1);
-            manipulate_walls(current_neighbor, new_neighbor, false);
-            //For this random frontier_cell we take the current node and use that to establish a wall.
-            if(visualize == true){await delay(100);}
-            const new_neighbor_element = document.querySelector(`[data-coordinates="${cordString(new_neighbor)}"]`)
-            new_neighbor_element.style.background = "green"
-            current_neighbor =  new_neighbor;
-            visited_nodes.push(new_neighbor);
         }
         console.log(cell_container) 
         document.querySelectorAll(".grid_item").forEach(element => {
             element.style.background = "green"
         });
+    }
+    function findArray(nestedArray, array)
+    {
+        const itemIndex = nestedArray.findIndex(subarray=>
+            {
+                return subarray.length ==  array.length && subarray.every((val, i)=>val===array[i])
+            }
+        )
+        return itemIndex;
     }
     function EllerAttempt()
     {
