@@ -50,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    const node_size = 20;
+    const node_size = 80;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -83,7 +83,7 @@
     onMounted(()=>
     {
         generate_grid(true);
-        prim_generation();
+        RBT();
     })
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
@@ -149,11 +149,11 @@
     }
     function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
     {
-        const adadada = ""
+        const borderStyle = add!=true? "none":`${node_size/40}px solid #FFFFFF`;
         const {max, min, axis} =  wall_check(a, b);
         const axis_change = axis_reference[axis];
-        document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = "none";
-        document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = "none";
+        document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = borderStyle;
+        document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = borderStyle;
         `${node_size/40}px; solid; #FFFFFF;`
 
         cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
@@ -193,7 +193,7 @@
         }
         else if(selectedAlgorithm.value == "rngdfs")
         {
-            await prim_generation();
+            await RBT();
         }
         //Grid_generation will be based on whether the algorithm calls for
     }
@@ -335,41 +335,54 @@
         )
         return itemIndex;
     }
-    function RBT()
+    function findBackTrackNode()
+    {
+
+    }
+
+    async function RBT()
     {
                 //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size));
         const random_y = Math.floor(Math.random() * (height/node_size));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
-        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        const unvisted_nodes = JSON.parse(JSON.stringify(cell_container))
+        const stack = [];//will record current path being taken
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
+            if(visualize == true){await delay(delayTime.value);}
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
             current_neighbor_element.style.background =  "green"
             const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
             })
-            if(new_neighbors.length==0)//Improve this 
+            if(new_neighbors.length>0)
             {
-                current_neighbor = visited_nodes[Math.floor(Math.random()*visited_nodes.length)];
-                continue;
+                const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
+                const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
+                new_neighbor_element.style.background = "green"
+                manipulate_walls(current_neighbor, new_neighbor, false);
+                current_neighbor =  new_neighbor;
+                visited_nodes.push(new_neighbor);
+                stack.push(new_neighbor);
+                //get item into the stack to tell us that it has traced to stack
             }
-            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
-            new_neighbor_element.style.background = "green"
-            manipulate_walls(current_neighbor, new_neighbor, false);
-            current_neighbor =  new_neighbor;
-            visited_nodes.push(new_neighbor);
+            else
+            {
+                current_neighbor = stack[stack.length-1];
+                stack.pop();
+                console.log("missing neighbors")
+                //If we can't trace item then we backtrack stack by going back an index and then removing the item
+                //repeat until we got an item that does actually have valid neighbor nodes
+
+            }
 
         }
         console.log(cell_container)
         document.querySelectorAll(".grid_item").forEach(element => {
             element.style.background = "green"
         });
-
     }
 
 
