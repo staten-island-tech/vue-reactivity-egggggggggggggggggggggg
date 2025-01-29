@@ -27,7 +27,7 @@
                 <option value="Easy">Easy</option>
             </select>
         </form>
-        <form @submit.prevent="" @change="changeAlgorithm" class="change_algorithm">
+        <form @submit.prevent="" @change="doSomething" class="change_algorithm">
             <select v-model="selectedAlgorithm">
                 <option value="kruskal">Kruskal's Algorithm</option>
                 <option value="rngdfs">Randomized DFS</option>
@@ -50,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    const node_size = 80;
+    let node_size = 20;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -59,7 +59,7 @@
     const selectedAlgorithm =  ref("rngdfs");
     let visualize = false;
     const containerKey = ref(0);
-    const delayTime = ref(100);
+    const delayTime = ref(50);
     const axis_reference = {
         0: 
         {
@@ -193,6 +193,10 @@
         }
         else if(selectedAlgorithm.value == "rngdfs")
         {
+            await prim_generation();
+        }
+        else if(selectedAlgorithm.value == "back_recursive")
+        {
             await RBT();
         }
         //Grid_generation will be based on whether the algorithm calls for
@@ -272,8 +276,6 @@
             element.style.background = "green"
         });
     }    
-
-
     async function retyped_prims()//Attempt 2
     {
         //Works by selecting a frontier cell and finding the next node part of the set of visited nodes closest to frontier cell
@@ -339,10 +341,8 @@
     {
 
     }
-
     async function RBT()
     {
-                //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size));
         const random_y = Math.floor(Math.random() * (height/node_size));
         visited_nodes.push([random_x, random_y]);
@@ -351,8 +351,6 @@
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
             if(visualize == true){await delay(delayTime.value);}
-            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
-            current_neighbor_element.style.background =  "green"
             const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
@@ -370,11 +368,10 @@
             }
             else
             {
-                current_neighbor = stack[stack.length-1];
+                 current_neighbor = stack.at(-1);
+                const new_element = document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
+                new_element.style.background = "orange";
                 stack.pop();
-                console.log("missing neighbors")
-                //If we can't trace item then we backtrack stack by going back an index and then removing the item
-                //repeat until we got an item that does actually have valid neighbor nodes
 
             }
 
@@ -384,21 +381,12 @@
             element.style.background = "green"
         });
     }
-
-
-    function EllerAttempt()
+    function solvePoints(point1, point2)
     {
-        //get the first row        
-        // //randomly join the cells and ensure they belong to different sets 
-        const row_length =  width/node_size;
-        const random_cells = Math.floor(Math.random() * (row_length-1)+1)//Make sure there is atleast one set fuse that happens
+        const manhattanDist =  abs(point1[0]-point2[0]) +  abs(point1[1]+point2[1]);
 
-        for(let i = 0; i<random_cells;i++)
-        {
-            
-        }
     }
-
+    //Implement A*, Djikstra's, idk, Greedy Best First Search.
 
 </script>
 <style scoped>
@@ -433,7 +421,7 @@
     {
         border-radius: 0px;
 
-    }
+    } 
     .change_difficulty
     {
         border-radius: 0px; 
