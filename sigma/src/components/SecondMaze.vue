@@ -50,13 +50,13 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 20;
+    let node_size = 80;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
-    const selectedAlgorithm =  ref("rngdfs");
+    const selectedAlgorithm =  ref("back_recursive");
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(50);
@@ -368,7 +368,7 @@
             }
             else
             {
-                 current_neighbor = stack.at(-1);
+                current_neighbor = stack.at(-1);
                 const new_element = document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
                 new_element.style.background = "orange";
                 stack.pop();
@@ -396,6 +396,31 @@
     //p(n) =  priority quee where lowest is selected to be traversed
     //repeat this until it reaches end node
 
+    function Astar()
+    {
+        const startingNode = stringCord(selected_nodes[0]);
+        const endingNode =  stringCord(selected_nodes[1]);
+        let currentNode =  startingNode;
+        while(currentNode!=endingNode)
+        {
+            const cNodeNeighbors =  get_neighbors(currentNode[0],currentNode[1],false)
+            for(let i = 0; i>cNodeNeighbors.length;i++)
+                {
+                    const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
+                    const axisInfo =  axis_reference[axis];
+                    const maWall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                    if(maWall==true)
+                    {
+                        continue;
+                    }
+                    let nextNode;//Placeholder
+                    const mDist =  abs(nextNode[0]-currentNode[0])+abs(nextNode[1]-currentNode[1]);
+                }
+            //using valid direction you can choose a direction to move towards
+            //Get neighbors and check the walls now
+
+        }
+    }
 </script>
 <style scoped>
     .maze_container
