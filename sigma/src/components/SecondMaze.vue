@@ -386,7 +386,15 @@
         const manhattanDist =  abs(point1[0]-point2[0]) +  abs(point1[1]+point2[1]);
 
     }
-    //Implement A*, Djikstra's, idk, Greedy Best First Search.
+    //Implement A*, Djikstra's, Greedy Best First Search.
+    
+    //A* =  p(n) =  g(n) + h(n)
+    //g(n) =  distance between the current node and nodes surrounding 
+    //To find g(n) continue in one direction until it hits a wall.
+    //h(n) =  heuristics that will find manhattan distance
+    //This is just the straight distance between the current node and end node
+    //p(n) =  priority quee where lowest is selected to be traversed
+    //repeat this until it reaches end node
 
 </script>
 <style scoped>
