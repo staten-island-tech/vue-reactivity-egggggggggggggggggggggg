@@ -18,7 +18,7 @@
     <div class="options_menu"> 
         <form @submit.prevent>
             <button type="button" @click="doSomething" >Regenerate</button>
-            <button type="button" @click="">Solve Points</button>
+            <button type="button" @click="Astar">Solve Points</button>
         </form>
         <form @submit.prevent="" @change="changeDifficulty" class="change_difficulty">
             <select v-model="selectedDifficulty">
@@ -50,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 80;
+    let node_size = 40;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -381,22 +381,17 @@
             element.style.background = "green"
         });
     }
-    function solvePoints(point1, point2)
-    {
-        const manhattanDist =  abs(point1[0]-point2[0]) +  abs(point1[1]+point2[1]);
-
-    }
     //Implement A*, Djikstra's, Greedy Best First Search.
     
     //A* =  p(n) =  g(n) + h(n)
     //g(n) =  distance between the current node and nodes surrounding 
     //To find g(n) continue in one direction until it hits a wall.
     //h(n) =  heuristics that will find manhattan distance
-    //This is just the straight distance between the current node and end node
+    //This is just the straight distance between   the current node and end node
     //p(n) =  priority quee where lowest is selected to be traversed
     //repeat this until it reaches end node
 
-    function Astar()
+    function reWrittenAstar()
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
@@ -404,21 +399,76 @@
         while(currentNode!=endingNode)
         {
             const cNodeNeighbors =  get_neighbors(currentNode[0],currentNode[1],false)
-            for(let i = 0; i>cNodeNeighbors.length;i++)
+            console.log(currentNode, "currentNode")
+            console.log(cNodeNeighbors)
+            let lowest_p = {
+                node:null,
+                priority:null,
+            };
+            for(let i = 0; i<cNodeNeighbors.length;i++)
+            {
+                const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
+                const axisInfo =  axis_reference[axis];
+                const maWall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                console.log(maWall, "mawall")
+                if(maWall==true)
                 {
-                    const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
-                    const axisInfo =  axis_reference[axis];
-                    const maWall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                    if(maWall==true)
-                    {
-                        continue;
-                    }
-                    let nextNode;//Placeholder
-                    const mDist =  abs(nextNode[0]-currentNode[0])+abs(nextNode[1]-currentNode[1]);
+                    console.log("this evaluated to true")
+                    continue;
                 }
-            //using valid direction you can choose a direction to move towards
-            //Get neighbors and check the walls now
-
+                let nextNode=cNodeNeighbors[i];//Placeholder
+                const manhattanDist =  Math.abs(endingNode[0]-nextNode[0])+Math.abs(endingNode[1]-nextNode[1]);
+                const nodeDist = Math.abs(nextNode[axis]-currentNode[axis]);
+                const priority = manhattanDist+nodeDist;
+                if(priority<lowest_p.priority || lowest_p.p == null)
+                {
+                    lowest_p.priority = priority;
+                    lowest_p.node =  nextNode;
+                }
+            }
+            currentNode = lowest_p.node;
+            console.log(currentNode, lowest_p)
+            const nextNodeElement =  document.querySelector(`[data-coordinates="${cordString(currentNode)}"]`)
+        }
+    }
+    function Astar()
+    {
+        const startingNode = stringCord(selected_nodes[0]);
+        const endingNode =  stringCord(selected_nodes[1]);
+        let currentNode =  startingNode;
+        for(let ab =0; ab<100; ab++)
+        {
+            const cNodeNeighbors =  get_neighbors(currentNode[0],currentNode[1],false)
+            console.log(currentNode, "currentNode")
+            console.log(cNodeNeighbors)
+            let lowest_p = {
+                node:null,
+                priority:null,
+            };
+            for(let i = 0; i<cNodeNeighbors.length;i++)
+            {
+                const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
+                const axisInfo =  axis_reference[axis];
+                const maWall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                console.log(maWall, "mawall")
+                if(maWall==true)
+                {
+                    console.log("this evaluated to true")
+                    continue;
+                }
+                let nextNode=cNodeNeighbors[i];//Placeholder
+                const manhattanDist =  Math.abs(endingNode[0]-nextNode[0])+Math.abs(endingNode[1]-nextNode[1]);
+                const nodeDist = Math.abs(nextNode[axis]-currentNode[axis]);
+                const priority = manhattanDist+nodeDist;
+                if(priority<lowest_p.priority || lowest_p.p == null)
+                {
+                    lowest_p.priority = priority;
+                    lowest_p.node =  nextNode;
+                }
+            }
+            currentNode = lowest_p.node;
+            console.log(currentNode, lowest_p)
+            const nextNodeElement =  document.querySelector(`[data-coordinates="${cordString(currentNode)}"]`)
         }
     }
 </script>
