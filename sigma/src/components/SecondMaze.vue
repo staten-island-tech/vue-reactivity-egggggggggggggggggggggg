@@ -396,6 +396,10 @@
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
         let currentNode =  startingNode;
+        const openSet = [startingNode];
+        const closedSet = [];
+        
+
         for(let ab =0; ab<100; ab++)
         {
             await delay(100);
@@ -432,6 +436,33 @@
             const nextNodeElement =  document.querySelector(`[data-coordinates="${cordString(currentNode)}"]`)
             nextNodeElement.style.background =  "red"
         }
+    }
+    async function actualAstar()
+    {
+        const startingNode = stringCord(selected_nodes[0]);
+        const endingNode =  stringCord(selected_nodes[1]);
+        let currentNode =  startingNode;
+        const openSet = {};
+        const closedSet = {};
+        while(currentNode!=endingNode)
+        {
+            await delay(100);
+            const cNodeNeighbors =  get_neighbors(currentNode[0],currentNode[1],false)
+            for(let i = 0; i<cNodeNeighbors.length;i++)//Get possible node traversals
+            {
+                const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
+                const axisInfo =  axis_reference[axis];
+                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                if(wall==true)
+                {
+                    continue;
+                }
+                openSet.push(cNodeNeighbors[i]);
+            }
+            closedSet.push(currentNode);
+
+        }
+         
     }
 </script>
 <style scoped>
