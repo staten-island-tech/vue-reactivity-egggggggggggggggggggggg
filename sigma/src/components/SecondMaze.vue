@@ -328,6 +328,14 @@
         console.log(cell_container) 
 
     }
+    function searchObjectArray(array, subarray){//find array in an object nested in an array
+        const itemIndex = array.findIndex(object =>
+            {
+                return object.node.every((value, index) => value === subarray[index])
+            }
+        )
+        return itemIndex
+    }
     function findArray(nestedArray, array)
     {
         const itemIndex = nestedArray.findIndex(subarray=>
@@ -382,109 +390,13 @@
         });
     }
     //Implement A*, Djikstra's, Greedy Best First Search.
-    
 
     async function Astar()
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
         let currentNode =  startingNode;
-        const openSet = [startingNode];
-        const closedSet = [];
-        
-
-        for(let ab =0; ab<100; ab++)
-        {
-            await delay(100);
-            const cNodeNeighbors =  get_neighbors(currentNode[0],currentNode[1],false)
-            console.log(currentNode, "currentNode")
-            console.log(cNodeNeighbors)
-            let lowest_p = {
-                node:null,
-                priority:Infinity,
-            };
-            for(let i = 0; i<cNodeNeighbors.length;i++)
-            {
-                const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
-                const axisInfo =  axis_reference[axis];
-                const maWall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                console.log(maWall, "mawall")
-                if(maWall==true)
-                {
-                    console.log("this evaluated to true")
-                    continue;
-                }
-                let nextNode=cNodeNeighbors[i];//Placeholder
-                const manhattanDist =  Math.abs(endingNode[0]-nextNode[0])+Math.abs(endingNode[1]-nextNode[1]);
-                const nodeDist = Math.abs(nextNode[axis]-currentNode[axis]);
-                const priority = manhattanDist+nodeDist;
-                if(priority<lowest_p.priority || lowest_p.priority == null)
-                {
-                    lowest_p.priority = priority;
-                    lowest_p.node =  nextNode;
-                }
-            }
-            currentNode = lowest_p.node;
-            console.log(currentNode, lowest_p)
-            const nextNodeElement =  document.querySelector(`[data-coordinates="${cordString(currentNode)}"]`)
-            nextNodeElement.style.background =  "red"
-        }
-    }
-    async function actualAstar()
-    {
-        const startingNode = stringCord(selected_nodes[0]);
-        const endingNode =  stringCord(selected_nodes[1]);
-        let currentNode =  startingNode;
-        const startNodePriority =  Math.abs(endingNode[0]-startingNode[0])+Math.abs(endingNode[1]-startingNode[1]);//Only need mDist as node cost =  0;m
-        
-        const openSet = [
-            {
-                priority:startNodePriority,
-                node:startingNode,
-                g:0
-            }
-        ];
-        const closedSet = [];
-        while(currentNode!=endingNode)
-        {
-            await delay(100);
-            const cNodeNeighbors = get_neighbors(currentNode[0],currentNode[1],false)
-            for(let i = 0; i<cNodeNeighbors.length;i++)//Get possible node traversals
-            {
-                const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
-                const axisInfo =  axis_reference[axis];
-                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                if(wall==true || findArray(closedSet, cNodeNeighbors[i]) != -1)//if wall exists or the node is within the closed set then dont explore it
-                {
-                    continue;
-                }
-                const manhattanDist =  Math.abs(endingNode[0]-cNodeNeighbors[i][0])+Math.abs(endingNode[1]-cNodeNeighbors[i][1]);
-                const nodeDist = Math.abs(nextNode[axis]-cNodeNeighbors[i][axis]);
-                const priorityValue =  manhattanDist+nodeDist;
-                openSet.push(
-                    {
-                        priority:priorityValue,
-                        node:cNodeNeighbors[i],
-                        gValue:nodeDist
-                    }
-                );//Add this to the open set
-            }
-            closedSet.push(currentNode);
-            openSet.splice(0,1);
-            openSet.sort(a,b=>
-            {
-                a.priority-b.priority
-            }
-            )    
-            currentNode = openSet[0];
-            //Lowest p node so set it to current continue traversing it;        
-        }    
-    }
-    function actualAstartwo()
-    {
-        const startingNode = stringCord(selected_nodes[0]);
-        const endingNode =  stringCord(selected_nodes[1]);
-        let currentNode =  startingNode;
+        const startNodePriority =  Math.abs(endingNode[0]-startingNode[0])+Math.abs(endingNode[1]-startingNode[1]);
         const closedSet = [];
         const openSet = [
             {
@@ -493,28 +405,30 @@
                 gValue:0
             }
         ];
-        while(currentNode!=endingNode)
+        while(isEqualNodes(currentNode, endingNode)!=true)
         {
             await delay(100);
             const cNodeNeighbors = get_neighbors(currentNode[0],currentNode[1],false)
+            console.log(cNodeNeighbors,"neighbors")
             for(let i = 0; i<cNodeNeighbors.length;i++)//Get possible node traversals
             {
+
                 const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
                 const axisInfo =  axis_reference[axis];
                 const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                if(wall==true || findArray(closedSet, cNodeNeighbors[i]) != -1)//if wall exists or the node is within the closed set then dont explore it
+                if(wall==true || findArray(closedSet, cNodeNeighbors[i]) != -1 || searchObjectArray(openSet, cNodeNeighbors[i])!=-1)
                 {
                     continue;
                 }
                 const manhattanDist =  Math.abs(endingNode[0]-cNodeNeighbors[i][0])+Math.abs(endingNode[1]-cNodeNeighbors[i][1]);
-                const nodeDist = Math.abs(endingNode[0]-startingNode[i][0])+Math.abs(endingNode[1]-startingNode[i][1]);
+                const nodeDist = Math.abs(endingNode[0]-startingNode[0])+Math.abs(endingNode[1]-startingNode[1]);
                 const priorityValue = manhattanDist+nodeDist;
                 openSet.push({
                     priority:priorityValue,
                     node:cNodeNeighbors[i],
                     gValue:nodeDist
                 })
-                closedSet.push(currentNode);
+    
                 openSet.splice(0,1);
                 //Use a for loop to iterate through openSet and compare p values to avoid sorting the whole list
                 for(let q = 0; q<openSet.length;q++)
@@ -528,22 +442,18 @@
                                 gValue:nodeDist
                             }
                         )
-                        break
+                        break;
                     }
                 }
-                openSet.sort(a,b=>
-                    {
-                        a.priority-b.priority
-                    }
-                )  
-                currentNode = openSet[0];
-                
             }
-
-
-
+            console.log(openSet, closedSet)
+            document.querySelector(`[data-coordinates="${cordString(currentNode)}"]`).style.background = "red"
+            console.log(openSet[0].node, "newNode")
+            closedSet.push(currentNode);
+            currentNode = openSet[0].node;
         }
     }
+    
     //basic idea
     // f = g+h where h = the heuristic of manhattan dist between current and end 
     //g = the current node minus the starting node. 
