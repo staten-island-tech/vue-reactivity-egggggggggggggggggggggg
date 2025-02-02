@@ -159,13 +159,13 @@
         cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
         cell_container[min[0]][min[1]].walls[axis_change.minWall] = add;
     }
-    function get_neighbors(cord_x, cord_y, removeSetNeighbors)//Return neighbors of a given cord, could prob remove having to add two cords
+    function get_neighbors(cord,removeSetNeighbors)//Return neighbors of a given cord, could prob remove having to add two cords
     {
         const neighbors = []
-        neighbors.push([cord_x-1, cord_y]);
-        neighbors.push([cord_x+1, cord_y]);
-        neighbors.push([cord_x, cord_y+1]);
-        neighbors.push([cord_x, cord_y-1]);
+        neighbors.push([cord[0]-1, cord[1]]);
+        neighbors.push([cord[0]+1, cord[1]]);
+        neighbors.push([cord[0], cord[1]+1]);
+        neighbors.push([cord[0], cord[1]-1]);
         const possible_neighbors = neighbors.filter(item=>
             {
                 if(item[0]<0 || item[1]<0)
@@ -253,7 +253,7 @@
         {
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
             current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
+            const new_neighbors =  get_neighbors(current_neighbor, true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
             })
@@ -293,7 +293,7 @@
         {
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`)
             current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
+            const new_neighbors =  get_neighbors(current_neighbor, true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${cordString(neighbor_item)}"]`).style.background = "red"
                 frontier_cells.push(neighbor_item);
@@ -302,7 +302,7 @@
             const rFrontIndex = Math.floor(Math.random()*frontier_cells.length);
             const rFrontCell =  frontier_cells[rFrontIndex];
             console.log(rFrontCell, rFrontIndex, fronter)
-            const frontier_neighbors = get_neighbors(rFrontCell[0], rFrontCell[1], false);
+            const frontier_neighbors = get_neighbors(rFrontCell, false);
             for(let a = 0; a<frontier_neighbors.length; a++)
             {
                 if(JSON.stringify(visited_nodes).includes(JSON.stringify(frontier_neighbors[a])))//This isnt the problem
@@ -345,10 +345,6 @@
         )
         return itemIndex;
     }
-    function findBackTrackNode()
-    {
-
-    }
     async function RBT()
     {
         const random_x = Math.floor(Math.random() * (width/node_size));
@@ -359,7 +355,7 @@
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
             if(visualize == true){await delay(delayTime.value);}
-            const new_neighbors =  get_neighbors(current_neighbor[0], current_neighbor[1], true);
+            const new_neighbors =  get_neighbors(current_neighbor, true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
             })
@@ -390,8 +386,7 @@
         });
     }
     //Implement A*, Djikstra's, Greedy Best First Search.
-
-    async function Astar()
+    async function stupidAstar()
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
@@ -408,7 +403,7 @@
         while(isEqualNodes(currentNode, endingNode)!=true)
         {
             await delay(100);
-            const cNodeNeighbors = get_neighbors(currentNode[0],currentNode[1],false)
+            const cNodeNeighbors = get_neighbors(currentNode,false)
             console.log(cNodeNeighbors,"neighbors")
             for(let i = 0; i<cNodeNeighbors.length;i++)//Get possible node traversals
             {
@@ -416,6 +411,7 @@
                 const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
                 const axisInfo =  axis_reference[axis];
                 const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                console.log(axisInfo)
                 if(wall==true || findArray(closedSet, cNodeNeighbors[i]) != -1 || searchObjectArray(openSet, cNodeNeighbors[i])!=-1)
                 {
                     continue;
@@ -431,6 +427,7 @@
     
                 openSet.splice(0,1);
                 //Use a for loop to iterate through openSet and compare p values to avoid sorting the whole list
+                let inserted = false
                 for(let q = 0; q<openSet.length;q++)
                 {
                     if(openSet[q].gValue>=priorityValue)
@@ -442,8 +439,16 @@
                                 gValue:nodeDist
                             }
                         )
+                        inserted = true;
                         break;
                     }
+                }
+                if (!inserted) {
+                    openSet.push({
+                        priority: priorityValue,
+                        node: cNodeNeighbors[i],
+                        gValue: nodeDist
+                    });
                 }
             }
             console.log(openSet, closedSet)
@@ -452,6 +457,90 @@
             closedSet.push(currentNode);
             currentNode = openSet[0].node;
         }
+    }
+    async function Astar()
+    {
+        const startingNode = stringCord(selected_nodes[0]);
+        const endingNode =  stringCord(selected_nodes[1]);
+        let currentNode =  startingNode;
+        const openSet = [{
+            node:startingNode,
+            f:getMDIST(startingNode, endingNode),
+            g:0,
+            h:getMDIST(startingNode, endingNode),
+            parentNode:null
+        }]//key =  string cords
+        let pushed = false;
+        const closedSet = [];
+        for(let i=0;i<100;i++)
+        {        
+            const currentNodeNeighbors =  get_neighbors(currentNode, false);//Dont need to remove setNeighbors yet
+            for(let a = 0; a<currentNodeNeighbors.length; a++)
+            {
+                const {max, min, axis} = wall_check(currentNode,currentNodeNeighbors[a]);
+                const axisInfo =  axis_reference[axis];
+                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                if(wall==true)//Wont get added to openSet
+                {
+                    console.log(cell_container[max[0]][max[1]],"cannot go here") 
+                    continue;
+                }
+                if(searchObjectArray(openSet,currentNodeNeighbors[a])!=-1||searchObjectArray(closedSet, currentNodeNeighbors[a])!=-1)
+                {
+                    continue;
+                }
+                const priority = getMDIST(currentNode,currentNodeNeighbors[a])+getMDIST(endingNode,currentNodeNeighbors[a]);
+                for(let j=0;j<openSet.length;j++)
+                {
+                    if(openSet[j].priority>priority)
+                    {
+                        openSet.splice(j,0,{
+                            node:currentNodeNeighbors[a],
+                            priority:priority,
+                        })
+                        pushed=true;
+                    }
+                }
+                if(!pushed)
+                {
+                    openSet.push(
+                        {
+                            node:currentNodeNeighbors[a],
+                            priority:priority,
+                        }
+                    )
+                }
+                pushed=false;
+            }
+            closedSet.push(openSet[0].node);//Prevent re explore
+            openSet.splice(0,1);//remove from the open set
+            currentNode=openSet[0];//First item = lowest priority node;
+        }
+        //Continue the loop now
+    }
+    function huntAndKill()
+    {
+
+    }
+    function verifyPath(array)
+    {
+        array.forEach()
+        {
+            //wall check the things to see if they're nodes next to each other and also check for walls
+            //
+        }
+    }
+
+    function getMDIST(node1, node2)
+    {
+        return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
+    }
+    function Astar2()
+    {
+        const startingNode = stringCord(selected_nodes[0]);
+        const endingNode =  stringCord(selected_nodes[1]);
+        let currentNode =  startingNode;
+    
     }
     
     //basic idea
