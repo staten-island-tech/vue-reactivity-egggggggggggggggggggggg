@@ -76,10 +76,6 @@
             minStyle:"borderBottom",
         }
     }
-    function removeGrid(){
-
-    }
-
     onMounted(()=>
     {
         generate_grid(true);
@@ -201,13 +197,6 @@
         }
         //Grid_generation will be based on whether the algorithm calls for
     }
-    function reset_maze()//Resets everything back to a clean slate in a single function 
-    {
-        containerKey.value+=1;
-        selected_nodes = [];
-        visited_nodes.length = 0;
-        visualize = false;
-    }
     function changeDifficulty()//Just changes the node size thats really it
     {
         console.log(selectedDifficulty.value);
@@ -289,41 +278,22 @@
         //Make two arrays one for visited_nodes and one for frontier cells;
         //Conditional that if visited_cells != the total amount of nodes continue running 
         //while(visited_cells.length!=amount_of_nodes){}
-        for(let i = 0; i<100; i++)
+        for(let i = 0; i<100;i++)
         {
-            const current_neighbor_element =  document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`)
-            current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor, true);
-            new_neighbors.forEach(neighbor_item =>{
-                document.querySelector(`[data-coordinates="${cordString(neighbor_item)}"]`).style.background = "red"
-                frontier_cells.push(neighbor_item);
-            })
-        
-            const rFrontIndex = Math.floor(Math.random()*frontier_cells.length);
-            const rFrontCell =  frontier_cells[rFrontIndex];
-            console.log(rFrontCell, rFrontIndex, fronter)
-            const frontier_neighbors = get_neighbors(rFrontCell, false);
-            for(let a = 0; a<frontier_neighbors.length; a++)
-            {
-                if(JSON.stringify(visited_nodes).includes(JSON.stringify(frontier_neighbors[a])))//This isnt the problem
-                    {
-                        const AdjFrontIndex = findArray(visited_nodes,frontier_neighbors[a]);
-                        //We have the connection node now
-                        //Will always find an adjacent set node      
-                        
-                        manipulate_walls(frontier_neighbors[a], visited_nodes[AdjFrontIndex]);
-                        current_neighbor = frontier_neighbors[a];
-                        visited_nodes.push(rFrontCell);
-                        frontier_cells.splice(rFrontIndex,1);
-                        console.log("terminated")
-                        break;
-        
-                    };
-            }
-            console.log("YAY")
-            //If we dont have any more frontier cells then randomly select a frontier cell;
-
-            //Implement frontier logic here
+            const new_neighbors =  get_neighbors(current_neighbor, true);//Get neighbors that are not in the set already
+            //New frontiers
+            new_neighbors.forEach(nNeighbor=>
+                {
+                    frontier_cells.push([nNeighbor,current_neighbor]);
+                    //add to frontiersCells
+                }
+            )
+            const new_node = frontier_cells[Math.floor(Math.random)*frontier_cells.length]
+            const fCell =  new_node[0];
+            const adjSetCell =  new_node[1];
+            manipulate_walls(fCell, adjSetCell, false)
+            visited_nodes.push(new_node);
+            current_neighbor = new_node;
         }
         console.log(cell_container) 
 
@@ -518,10 +488,6 @@
         }
         //Continue the loop now
     }
-    function huntAndKill()
-    {
-
-    }
     function verifyPath(array)
     {
         array.forEach()
@@ -541,8 +507,36 @@
         const endingNode =  stringCord(selected_nodes[1]);
         let currentNode =  startingNode;
     
+    } 
+    function BFS()
+    {
+        const startingPoint = stringCord(selected_nodes[0]);
+        const endingPoint =  stringCord(selected_nodes[1]);
+        let currentNode = startingNode;
+        const Queue = [];
+        const explored = [];
+        while(currentNode!=endingPoint)
+        {
+            const nNeighbors = get_neighbors(currentNode, false)
+            nNeighbors.forEach(
+                nNeighbor=>
+                {
+                    const { max, min, axis } =  wall_check(currentNode, nNeighbor);
+                    const axisInfo =  axis_reference[axis];
+                    const wall =  cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                    if(wall == true)
+                    {
+                        nNeighbor.splice(indexof(nNeighbor),1);
+                        Queue.push(nNeighbor);
+                        //remove the item
+                    }
+                }
+            )//remove invalid paths
+            explored.push(currentNode);//add to explored
+            Queue.splice(indexOf(currentNode),1);//remove from pQueue
+            currentNode =  Queue[0];
+        }
     }
-    
     //basic idea
     // f = g+h where h = the heuristic of manhattan dist between current and end 
     //g = the current node minus the starting node. 
@@ -551,7 +545,6 @@
     //closed set = nodes that have already been explored. if they've been explored do not traverse or add them to the open set. 
     //Tthis will run in a while loop that does not terminate until the currentNode has arrived at the end node. 
     //travel cost always equals 1 
-
 </script>
 <style scoped>
     .maze_container
