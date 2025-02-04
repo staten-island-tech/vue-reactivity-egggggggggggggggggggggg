@@ -30,7 +30,7 @@
         <form @submit.prevent="" @change="doSomething" class="change_algorithm">
             <select v-model="selectedAlgorithm">
                 <option value="kruskal">Kruskal's Algorithm</option>
-                <option value="rngdfs">Randomized DFS</option>
+                <option value="prims">PRIMS</option>
                 <option value="back_recursive">Recursive Backtracker</option>
                 <option value="treegrow">Growing Tree</option>
                 <option value="huntkill">Hunt and Kill</option>
@@ -50,13 +50,13 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 40;
+    let node_size = 20;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
-    const selectedAlgorithm =  ref("back_recursive");
+    const selectedAlgorithm =  ref("prims");
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(50);
@@ -79,7 +79,7 @@
     onMounted(()=>
     {
         generate_grid(true);
-        RBT();
+        prim_generation();
     })
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
@@ -187,7 +187,7 @@
         if(selectedAlgorithm.value == "kruskal")
         {
         }
-        else if(selectedAlgorithm.value == "rngdfs")
+        else if(selectedAlgorithm.value == "prim")
         {
             await prim_generation();
         }
@@ -229,7 +229,7 @@
         }
         console.log(selected_nodes)
     }
-    async function prim_generation()//Idk if this is even Prim's anymore
+    async function notPRIMS()//Idk if this is even Prim's anymore
     {
         //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size));
@@ -265,39 +265,38 @@
             element.style.background = "green"
         });
     }    
-    async function retyped_prims()//Attempt 2
+    async function prim_generation()//Attempt 2
     {
-        //Works by selecting a frontier cell and finding the next node part of the set of visited nodes closest to frontier cell
-        //green =  visited
-        //red = frontiers
+        console.log("starting prims")
         const frontier_cells = [];
         const random_x = Math.floor(Math.random() * (width/node_size));
         const random_y = Math.floor(Math.random() * (height/node_size));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
-        //Make two arrays one for visited_nodes and one for frontier cells;
-        //Conditional that if visited_cells != the total amount of nodes continue running 
-        //while(visited_cells.length!=amount_of_nodes){}
-        for(let i = 0; i<100;i++)
+
+        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
-            const new_neighbors =  get_neighbors(current_neighbor, true);//Get neighbors that are not in the set already
-            //New frontiers
+            
+            const new_neighbors =  get_neighbors(current_neighbor, true);
+            document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`).style.background = "green"
             new_neighbors.forEach(nNeighbor=>
                 {
                     frontier_cells.push([nNeighbor,current_neighbor]);
-                    //add to frontiersCells
+                    document.querySelector(`[data-coordinates="${cordString(nNeighbor)}"]`).style.background = "red"
                 }
             )
-            const new_node = frontier_cells[Math.floor(Math.random)*frontier_cells.length]
+            const randomFIndex = Math.floor(Math.random()*frontier_cells.length);
+            const new_node = frontier_cells[randomFIndex]
             const fCell =  new_node[0];
             const adjSetCell =  new_node[1];
             manipulate_walls(fCell, adjSetCell, false)
-            visited_nodes.push(new_node);
-            current_neighbor = new_node;
+            visited_nodes.push(fCell);
+            frontier_cells.splice(randomFIndex, 1);
+            current_neighbor = fCell;
         }
         console.log(cell_container) 
-
     }
+
     function searchObjectArray(array, subarray){//find array in an object nested in an array
         const itemIndex = array.findIndex(object =>
             {
