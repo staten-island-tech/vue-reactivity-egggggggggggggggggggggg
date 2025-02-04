@@ -50,16 +50,16 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 20;
+    let node_size = 10;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
-    const selectedAlgorithm =  ref("prims");
+    const selectedAlgorithm =  ref("back_recursive");
     let visualize = false;
     const containerKey = ref(0);
-    const delayTime = ref(50);
+    const delayTime = ref(1);
     const axis_reference = {
         0: 
         {
@@ -79,7 +79,7 @@
     onMounted(()=>
     {
         generate_grid(true);
-        prim_generation();
+        RBT();
     })
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
@@ -273,16 +273,18 @@
         const random_y = Math.floor(Math.random() * (height/node_size));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
-
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
-            
+            await delay(1);
             const new_neighbors =  get_neighbors(current_neighbor, true);
             document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`).style.background = "green"
             new_neighbors.forEach(nNeighbor=>
                 {
-                    frontier_cells.push([nNeighbor,current_neighbor]);
-                    document.querySelector(`[data-coordinates="${cordString(nNeighbor)}"]`).style.background = "red"
+                    if(findArrayCubed(frontier_cells, nNeighbor)==-1)
+                    {
+                        frontier_cells.push([nNeighbor,current_neighbor]);
+                        document.querySelector(`[data-coordinates="${cordString(nNeighbor)}"]`).style.background = "red"
+                    }
                 }
             )
             const randomFIndex = Math.floor(Math.random()*frontier_cells.length);
@@ -294,7 +296,7 @@
             frontier_cells.splice(randomFIndex, 1);
             current_neighbor = fCell;
         }
-        console.log(cell_container) 
+        console.log(cell_container);
     }
 
     function searchObjectArray(array, subarray){//find array in an object nested in an array
@@ -323,7 +325,7 @@
         const stack = [];//will record current path being taken
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
-            if(visualize == true){await delay(delayTime.value);}
+            {await delay(delayTime.value);}
             const new_neighbors =  get_neighbors(current_neighbor, true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
@@ -355,6 +357,15 @@
         });
     }
     //Implement A*, Djikstra's, Greedy Best First Search.
+    function findArrayCubed(arrayCubed, array)
+    {
+        const itemIndex = arrayCubed.findIndex(subarray=>
+            {
+                return subarray[0].length ==  array.length && subarray[0].every((val, i)=>val===array[i])
+            }
+        )
+        return itemIndex;
+    }
     async function stupidAstar()
     {
         const startingNode = stringCord(selected_nodes[0]);
