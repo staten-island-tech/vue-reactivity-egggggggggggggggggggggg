@@ -50,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 10;
+    let node_size = 20;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -81,6 +81,10 @@
         generate_grid(true);
         RBT();
     })
+
+
+
+//Methods
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
         const row = Math.ceil(square_position/(width/node_size))-1;
@@ -213,6 +217,23 @@
         visualize = false;
         running=false;
     }
+    function searchObjectArray(array, subarray){//find array in an object nested in an array
+        const itemIndex = array.findIndex(object =>
+            {
+                return object.node.every((value, index) => value === subarray[index])
+            }
+        )
+        return itemIndex
+    }
+    function findArray(nestedArray, array)
+    {
+        const itemIndex = nestedArray.findIndex(subarray=>
+            {
+                return subarray.length ==  array.length && subarray.every((val, i)=>val===array[i])
+            }
+        )
+        return itemIndex;
+    }
     function findNearestSquare(event)//Finds the current square the user has clicked on
     {
         const gridItem = event.target.closest(".grid_item");
@@ -229,7 +250,20 @@
         }
         console.log(selected_nodes)
     }
-    async function notPRIMS()//Idk if this is even Prim's anymore
+    function findArrayCubed(arrayCubed, array)
+    {
+        const itemIndex = arrayCubed.findIndex(subarray=>
+            {
+                return subarray[0].length ==  array.length && subarray[0].every((val, i)=>val===array[i])
+            }
+        )
+        return itemIndex;
+    }
+//Methods
+
+
+//Maze creation
+    async function randomizedDFS()
     {
         //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size));
@@ -237,7 +271,6 @@
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
         //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        const unvisted_nodes = JSON.parse(JSON.stringify(cell_container))
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
@@ -298,24 +331,6 @@
         }
         console.log(cell_container);
     }
-
-    function searchObjectArray(array, subarray){//find array in an object nested in an array
-        const itemIndex = array.findIndex(object =>
-            {
-                return object.node.every((value, index) => value === subarray[index])
-            }
-        )
-        return itemIndex
-    }
-    function findArray(nestedArray, array)
-    {
-        const itemIndex = nestedArray.findIndex(subarray=>
-            {
-                return subarray.length ==  array.length && subarray.every((val, i)=>val===array[i])
-            }
-        )
-        return itemIndex;
-    }
     async function RBT()
     {
         const random_x = Math.floor(Math.random() * (width/node_size));
@@ -347,25 +362,82 @@
                 const new_element = document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
                 new_element.style.background = "orange";
                 stack.pop();
-
             }
-
         }
         console.log(cell_container)
         document.querySelectorAll(".grid_item").forEach(element => {
             element.style.background = "green"
         });
     }
-    //Implement A*, Djikstra's, Greedy Best First Search.
-    function findArrayCubed(arrayCubed, array)
+    function RStartNode()
     {
-        const itemIndex = arrayCubed.findIndex(subarray=>
-            {
-                return subarray[0].length ==  array.length && subarray[0].every((val, i)=>val===array[i])
-            }
-        )
-        return itemIndex;
+        return [(Math.floor(Math.random() * (width/node_size))), (Math.floor(Math.random() * (height/node_size)))]
     }
+    function combineSets(set, item)
+    {
+        return JSON.stringify(set).includes(JSON.stringify(item));
+    }
+    async function Kruskals()
+    {
+        const randomStart =  RStartNode();
+        let currentNode =  randomStart;
+        const mazeSet =  new Set();
+        while(mazeSet.size!=((width/node_size)*(height/node_size)))
+        {
+            const new_neighbors = get_neighbors(currentNode);
+            const rnIndex = Math.floor(Math.random()*new_neighbors.length);            
+            const randNeighbor = new_neighbors[rnIndex];
+            if(randNeighbor in mazeSet || currentNode in mazeSet)
+            {
+                combineSets()
+            }
+            if(true)
+            {
+                manipulate_walls(currentNode,new_neighbors[rnIndex], false);
+                //change the coloring
+            }
+            currentNode = RStartNode();//get a new starting node 
+        }
+
+    }
+    async function huntkill()
+    {
+        const currentNode = RStartNode();
+        const visitedNodes = {
+        };
+        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
+        {
+            //Node management 
+            //Visited nodes will store based off of row so y value or an index of 1 
+            const newNeighbors =  get_neighbors(currentNode, true);//remove nodes that have been visited
+            if(newNeighbors.length==0)
+            {
+                //hunt for a new row to start again
+                for(let i = 0; i<(width/node_size); i++)
+                {
+                    if(visitedNodes[i].length!=(width/node_size))
+                    {
+                        
+                    }
+                }
+                continue;
+            }
+            const rnIndex = getRandNumb(newNeighbors.length);
+            manipulate_walls(currentNode, newNeighbors[rnIndex], false);
+            currentNode = newNeighbors[rnIndex];
+            visitedNodes.push(newNeighbors[rnIndex]);
+        }
+    }
+    function getRandNumb(max)
+    {
+        return Math.floor(Math.random()*max);
+    }
+//Maze creation
+
+
+
+
+//Maze solving
     async function stupidAstar()
     {
         const startingNode = stringCord(selected_nodes[0]);
@@ -506,7 +578,6 @@
             //
         }
     }
-
     function getMDIST(node1, node2)
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
@@ -555,6 +626,7 @@
     //closed set = nodes that have already been explored. if they've been explored do not traverse or add them to the open set. 
     //Tthis will run in a while loop that does not terminate until the currentNode has arrived at the end node. 
     //travel cost always equals 1 
+//Maze solving
 </script>
 <style scoped>
     .maze_container
