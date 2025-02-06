@@ -467,6 +467,9 @@
         const currentNode =  RStartNode();
         const visited = [];
         while(visited.length!=((width/node_size)*(height/node_size)))
+        {
+
+        }
     }
 //Maze creation
 
@@ -618,13 +621,6 @@
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
     }
-    function Astar2()
-    {
-        const startingNode = stringCord(selected_nodes[0]);
-        const endingNode =  stringCord(selected_nodes[1]);
-        let currentNode =  startingNode;
-    
-    } 
     function wallWrapper(array, orig)
     {
         return array.filter(arr=>
@@ -658,7 +654,6 @@
             }
             solution.push(currentNode);
             const nNeighbors =  wallWrapper(get_neighbors(currentNode, false),currentNode);
-            //remove neihgbors that are not open(walls)
             for(let i = 0; i<nNeighbors.length;i++)
             {
                 document.querySelector(`[data-coordinates="${cordString(nNeighbors[i])}"]`).style.background =  "red"
@@ -675,10 +670,46 @@
             document.querySelector(`[data-coordinates="${cordString(coord)}"]`).style.background =  "blue"
         }
         )
-
     }
-    function Astarlnlhihl()
+
+    function notAstara()
     {
+        const startingNode = stringCord(selected_nodes[0]);
+        const endingNode =  stringCord(selected_nodes[1]);
+        const closedList =  [];//Stores the already traversed nodes 
+        const openList = [];//Queue based list lowest p =  first out
+        openList.push(testObj);
+        const testObj =
+        {
+            parent:null, 
+            coordinate:startingNode, 
+            f:getMDIST(startingNode, endingNode),
+            g:0,
+            h:getMDIST(startingNode, endingNode)
+        }
+        let currentNode;
+        while(openList.length>0)
+        {
+            currentNode = openList[0];
+            const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
+            
+            for(let i = 0; i<newNeighbors.length;i++)
+            {
+                openList.push(
+                    {
+                        parent:currentNode,
+                        coordinate:newNeighbors[i],
+                        f:1+currentNode.g+getMDIST(endingNode, newNeighbors[i]),
+                        g:1+currentNode.g,
+                        h:getMDIST(endingNode, newNeighbors[i])
+                    }
+                )
+            }
+            closedList.push(currentNode);//add to the closed set 
+            openList.shift();//remove from the pQueue
+        }
+        
+
         
     }
     //basic idea
