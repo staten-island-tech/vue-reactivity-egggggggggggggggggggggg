@@ -403,8 +403,7 @@
     async function huntkill()
     {
         const currentNode = RStartNode();
-        const visitedNodes = {
-        };
+        const visitedNodes = [];
         while(visited_nodes.length!=((width/node_size)*(height/node_size)))
         {
             //Node management 
@@ -415,22 +414,59 @@
                 //hunt for a new row to start again
                 for(let i = 0; i<(width/node_size); i++)
                 {
+
                     if(visitedNodes[i].length!=(width/node_size))
                     {
-                        
+                        const missingCords =  findConsec(visitedNodes[i]);
+                        currentNode = [missingCords[0], i];
                     }
+
                 }
                 continue;
             }
             const rnIndex = getRandNumb(newNeighbors.length);
-            manipulate_walls(currentNode, newNeighbors[rnIndex], false);
-            currentNode = newNeighbors[rnIndex];
-            visitedNodes.push(newNeighbors[rnIndex]);
-        }
+            const nNeighbor = newNeighbors[rnIndex];
+            manipulate_walls(currentNode, nNeighbor, false);
+            currentNode = nNeighbor;
+            if(!visitedNodes[nNeighbor[1]])
+            {
+                visitedNodes[nNeighbor[1]]=[];
+            }
+            visitedNodes[nNeighbor[1]].push(nNeighbor[0]);
+
+        }   
     }
     function getRandNumb(max)
     {
         return Math.floor(Math.random()*max);
+    }
+    function findConsec(array)
+    {
+        const missing =  [];
+        let missingCounter = 0;
+        const arrayLength = array.length;
+        if(array[0]!=0)
+        {
+            missing,push(0)
+        }
+        if(array[array.length-1]!= (width/node_size-1))
+        {
+            missing.push((width/node_size-1));
+        }
+        for(let i = 0; i<(width/node_size);i++)
+        {
+            if(array[i] != i)
+            {
+                missing,push(i)
+                missingCounter+=1;
+            }
+        }
+    }
+    function GrowingTree()
+    {   
+        const currentNode =  RStartNode();
+        const visited = [];
+        while(visited.length!=((width/node_size)*(height/node_size)))
     }
 //Maze creation
 
@@ -589,34 +625,61 @@
         let currentNode =  startingNode;
     
     } 
+    function wallWrapper(array, orig)
+    {
+        return array.filter(arr=>
+            {
+                const {max,min,axis} =  wall_check(arr[i], orig)
+                const axisInfo = axis_reference[axis];
+                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
+                return wall
+            }
+        )
+    }
     function BFS()
     {
-        const startingPoint = stringCord(selected_nodes[0]);
-        const endingPoint =  stringCord(selected_nodes[1]);
-        let currentNode = startingNode;
-        const Queue = [];
-        const explored = [];
-        while(currentNode!=endingPoint)
+        const startingNode =  stringCord(selected_nodes[0]);
+        const endingNode  = stringCord(selected_nodes[1]);
+        let currentNode;
+        const solution = [];
+        const frontier = [];
+        const visited = [];
+        let cost = 0;
+        frontier.push(startingNode);
+        visited.push(startingNode);
+        while(frontier.length!=0)
         {
-            const nNeighbors = get_neighbors(currentNode, false)
-            nNeighbors.forEach(
-                nNeighbor=>
+            currentNode = frontier[0];
+            frontier.shift();
+            if(currentNode==endingNode)
+            {
+                solution.push(currentNode)
+                break;
+            }
+            solution.push(currentNode);
+            const nNeighbors =  wallWrapper(get_neighbors(currentNode, false),currentNode);
+            //remove neihgbors that are not open(walls)
+            for(let i = 0; i<nNeighbors.length;i++)
+            {
+                document.querySelector(`[data-coordinates="${cordString(nNeighbors[i])}"]`).style.background =  "red"
+                if(findArray(visited, nNeighbors[i])==-1)
                 {
-                    const { max, min, axis } =  wall_check(currentNode, nNeighbor);
-                    const axisInfo =  axis_reference[axis];
-                    const wall =  cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                    if(wall == true)
-                    {
-                        nNeighbor.splice(indexof(nNeighbor),1);
-                        Queue.push(nNeighbor);
-                        //remove the item
-                    }
+                    frontier.push(nNeighbors[i]);
+                    visited.push(nNeighbors[i]);
                 }
-            )//remove invalid paths
-            explored.push(currentNode);//add to explored
-            Queue.splice(indexOf(currentNode),1);//remove from pQueue
-            currentNode =  Queue[0];
+            }
+            cost+=1;
         }
+        solution.forEach(coord=>
+        {
+            document.querySelector(`[data-coordinates="${cordString(coord)}"]`).style.background =  "blue"
+        }
+        )
+
+    }
+    function Astarlnlhihl()
+    {
+        
     }
     //basic idea
     // f = g+h where h = the heuristic of manhattan dist between current and end 
