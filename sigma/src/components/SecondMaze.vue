@@ -50,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 20;
+    let node_size = 80;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -477,146 +477,6 @@
 
 
 //Maze solving
-    async function stupidAstar()
-    {
-        const startingNode = stringCord(selected_nodes[0]);
-        const endingNode =  stringCord(selected_nodes[1]);
-        let currentNode =  startingNode;
-        const startNodePriority =  Math.abs(endingNode[0]-startingNode[0])+Math.abs(endingNode[1]-startingNode[1]);
-        const closedSet = [];
-        const openSet = [
-            {
-                priority:startNodePriority,
-                node:startingNode,
-                gValue:0
-            }
-        ];
-        while(isEqualNodes(currentNode, endingNode)!=true)
-        {
-            await delay(100);
-            const cNodeNeighbors = get_neighbors(currentNode,false)
-            console.log(cNodeNeighbors,"neighbors")
-            for(let i = 0; i<cNodeNeighbors.length;i++)//Get possible node traversals
-            {
-
-                const {max, min, axis} = wall_check(currentNode,cNodeNeighbors[i]);
-                const axisInfo =  axis_reference[axis];
-                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                console.log(axisInfo)
-                if(wall==true || findArray(closedSet, cNodeNeighbors[i]) != -1 || searchObjectArray(openSet, cNodeNeighbors[i])!=-1)
-                {
-                    continue;
-                }
-                const manhattanDist =  Math.abs(endingNode[0]-cNodeNeighbors[i][0])+Math.abs(endingNode[1]-cNodeNeighbors[i][1]);
-                const nodeDist = Math.abs(endingNode[0]-startingNode[0])+Math.abs(endingNode[1]-startingNode[1]);
-                const priorityValue = manhattanDist+nodeDist;
-                openSet.push({
-                    priority:priorityValue,
-                    node:cNodeNeighbors[i],
-                    gValue:nodeDist
-                })
-    
-                openSet.splice(0,1);
-                //Use a for loop to iterate through openSet and compare p values to avoid sorting the whole list
-                let inserted = false
-                for(let q = 0; q<openSet.length;q++)
-                {
-                    if(openSet[q].gValue>=priorityValue)
-                    {
-                        openSet.splice(q,0,
-                            {
-                                priority:priorityValue,
-                                node:cNodeNeighbors[i],
-                                gValue:nodeDist
-                            }
-                        )
-                        inserted = true;
-                        break;
-                    }
-                }
-                if (!inserted) {
-                    openSet.push({
-                        priority: priorityValue,
-                        node: cNodeNeighbors[i],
-                        gValue: nodeDist
-                    });
-                }
-            }
-            console.log(openSet, closedSet)
-            document.querySelector(`[data-coordinates="${cordString(currentNode)}"]`).style.background = "red"
-            console.log(openSet[0].node, "newNode")
-            closedSet.push(currentNode);
-            currentNode = openSet[0].node;
-        }
-    }
-    async function Astar()
-    {
-        const startingNode = stringCord(selected_nodes[0]);
-        const endingNode =  stringCord(selected_nodes[1]);
-        let currentNode =  startingNode;
-        const openSet = [{
-            node:startingNode,
-            f:getMDIST(startingNode, endingNode),
-            g:0,
-            h:getMDIST(startingNode, endingNode),
-            parentNode:null
-        }]//key =  string cords
-        let pushed = false;
-        const closedSet = [];
-        for(let i=0;i<100;i++)
-        {        
-            const currentNodeNeighbors =  get_neighbors(currentNode, false);//Dont need to remove setNeighbors yet
-            for(let a = 0; a<currentNodeNeighbors.length; a++)
-            {
-                const {max, min, axis} = wall_check(currentNode,currentNodeNeighbors[a]);
-                const axisInfo =  axis_reference[axis];
-                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                if(wall==true)//Wont get added to openSet
-                {
-                    console.log(cell_container[max[0]][max[1]],"cannot go here") 
-                    continue;
-                }
-                if(searchObjectArray(openSet,currentNodeNeighbors[a])!=-1||searchObjectArray(closedSet, currentNodeNeighbors[a])!=-1)
-                {
-                    continue;
-                }
-                const priority = getMDIST(currentNode,currentNodeNeighbors[a])+getMDIST(endingNode,currentNodeNeighbors[a]);
-                for(let j=0;j<openSet.length;j++)
-                {
-                    if(openSet[j].priority>priority)
-                    {
-                        openSet.splice(j,0,{
-                            node:currentNodeNeighbors[a],
-                            priority:priority,
-                        })
-                        pushed=true;
-                    }
-                }
-                if(!pushed)
-                {
-                    openSet.push(
-                        {
-                            node:currentNodeNeighbors[a],
-                            priority:priority,
-                        }
-                    )
-                }
-                pushed=false;
-            }
-            closedSet.push(openSet[0].node);//Prevent re explore
-            openSet.splice(0,1);//remove from the open set
-            currentNode=openSet[0];//First item = lowest priority node;
-        }
-        //Continue the loop now
-    }
-    function verifyPath(array)
-    {
-        array.forEach()
-        {
-            //wall check the things to see if they're nodes next to each other and also check for walls
-            //
-        }
-    }
     function getMDIST(node1, node2)
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
@@ -625,7 +485,7 @@
     {
         return array.filter(arr=>
             {
-                const {max,min,axis} =  wall_check(arr[i], orig)
+                const {max,min,axis} =  wall_check(arr, orig)
                 const axisInfo = axis_reference[axis];
                 const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
                 return wall
@@ -672,13 +532,13 @@
         )
     }
 
-    function notAstara()
+    function Astar()//should work theoretically
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
         const closedList =  [];//Stores the already traversed nodes 
         const openList = [];//Queue based list lowest p =  first out
-        openList.push(testObj);
+        const visited = [];
         const testObj =
         {
             parent:null, 
@@ -687,30 +547,57 @@
             g:0,
             h:getMDIST(startingNode, endingNode)
         }
+        openList.push(testObj);
         let currentNode;
         while(openList.length>0)
         {
             currentNode = openList[0];
+            document.querySelector(`[data-coordinates="${cordString(openList[0].coordinate)}"]`).style.background =  "blue"
             const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
-            
             for(let i = 0; i<newNeighbors.length;i++)
             {
-                openList.push(
+                if(findArray(visited, newNeighbors[i])!= -1)
+                {
+                    continue;
+                }
+                const h = getMDIST(endingNode, newNeighbors[i])
+                const g =  1+currentNode.g
+                const f =  h+g;
+                if(openList.length === 0 || openList[openList.length-1].f<=f)
+                {
+                    openList.push(
+                        {
+                            parent:currentNode,
+                            coordinate:newNeighbors[i],
+                            f:f,
+                            g:g,
+                            h:h
+                        }
+                    )
+                }
+                else{                    
+                    for(let a = 0; a<openList.length;a++)
                     {
-                        parent:currentNode,
-                        coordinate:newNeighbors[i],
-                        f:1+currentNode.g+getMDIST(endingNode, newNeighbors[i]),
-                        g:1+currentNode.g,
-                        h:getMDIST(endingNode, newNeighbors[i])
+                        if(openList[a].f > f)
+                        {
+                            openList.splice(a, 0, 
+                                {
+                                    parent:currentNode,
+                                    coordinate:newNeighbors[i],
+                                    f:f,
+                                    g:g,
+                                    h:h,
+                                }
+                            );
+                            break;
+                        }
                     }
-                )
+                }
+                visited.push(newNeighbors[i]);
             }
             closedList.push(currentNode);//add to the closed set 
             openList.shift();//remove from the pQueue
-        }
-        
-
-        
+        }   
     }
     //basic idea
     // f = g+h where h = the heuristic of manhattan dist between current and end 
