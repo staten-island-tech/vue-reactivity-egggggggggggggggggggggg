@@ -18,7 +18,7 @@
     <div class="options_menu"> 
         <form @submit.prevent>
             <button type="button" @click="doSomething" >Regenerate</button>
-            <button type="button" @click="Astar">Solve Points</button>
+            <button type="button" @click="solve">Solve Points</button>
         </form>
         <form @submit.prevent="" @change="changeDifficulty" class="change_difficulty">
             <select v-model="selectedDifficulty">
@@ -38,6 +38,12 @@
                 <option value="eller">Eller's</option>
             </select>
         </form>
+        <form @submit.prevent="" @change="doSomething" class="chnage_solvingAlgo">
+            <select v-model="selectedSolvingAlgorithm">
+                <option value="astar">A*</option>
+                <option value="bfs">Breadth-First-Search</option>
+            </select>
+        </form>
         <form>
             <input type="number" min="10" max="1000" step="10" v-model="delayTime">Delay
         </form>
@@ -50,16 +56,18 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 20;
+    let node_size = 10;
     let running=false;
-    const cell_container = {}; 
+    let cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
     const selectedAlgorithm =  ref("back_recursive");
+    const selectedSolvingAlgorithm =  ref("astar")
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(1);
+
     const axis_reference = {
         0: 
         {
@@ -79,12 +87,30 @@
     onMounted(()=>
     {
         generate_grid(true);
-        prim_generation();
+        RBT();
     })
 
 
 
 //Methods
+    function solve()
+    {
+        //check for two points selected
+        if(selected_nodes.length<2)
+        {
+            console.log("select two points");
+            return
+        }
+        if(selectedSolvingAlgorithm.value=="astar")
+        {
+            Astar();
+        }
+        else if(selectedSolvingAlgorithm.value == "bfs")
+        {
+            BFS();
+        }
+        selected_nodes.length == 0;
+    }
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
         const row = Math.ceil(square_position/(width/node_size))-1;
@@ -190,14 +216,31 @@
 
         if(selectedAlgorithm.value == "kruskal")
         {
+
         }
-        else if(selectedAlgorithm.value == "prim")
+        else if(selectedAlgorithm.value == "prims")
         {
             await prim_generation();
         }
         else if(selectedAlgorithm.value == "back_recursive")
         {
             await RBT();
+        }
+        else if(selectedAlgorithm.value == "treegrow")
+        {
+
+        }
+        else if(selectedAlgorithm.value == "huntkill")
+        {
+
+        }
+        else if(selectedAlgorithm.value == "wilson")
+        {
+
+        }
+        else if(selectedAlgorithm.value == "ellers")
+        {
+
         }
         //Grid_generation will be based on whether the algorithm calls for
     }
@@ -213,6 +256,8 @@
         visited_nodes.length = 0;
         selected_nodes = [];
         visualize = true
+        cell_container = {};
+        generate_grid(true)
         await changeAlgorithm();
         visualize = false;
         running=false;
@@ -532,7 +577,7 @@
         )
     }
 
-    async function Astar()//should work theoretically
+    async function Astar()//implement Map here 
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
@@ -556,12 +601,17 @@
             currentNode = openList[0];
             if(compareNodes(currentNode.coordinate, endingNode))
             {
+                let found = false;
                 //get the solution set here by backtracking 
-                currentNode.parent;
-                break;
+                const parentNode = currentNode.parent;
+                while(found!=true)
+                {
+
+                }
+                return;
             }
             console.log(currentNode.f)
-            document.querySelector(`[data-coordinates="${cordString(openList[0].coordinate)}"]`).style.background =  "blue"
+            document.querySelector(`[data-coordinates="${cordString(openList[0].coordinate)}"]`).style.background =  "purple"
             const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
             for(let i = 0; i<newNeighbors.length;i++)
             {
