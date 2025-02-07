@@ -50,7 +50,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 80;
+    let node_size = 20;
     let running=false;
     const cell_container = {}; 
     let selected_nodes = [];
@@ -79,7 +79,7 @@
     onMounted(()=>
     {
         generate_grid(true);
-        RBT();
+        prim_generation();
     })
 
 
@@ -124,7 +124,7 @@
     {
         return string.split(",").map(num=> parseInt(num, 10))
     };
-    function isEqualNodes(node1, node2)//Checks if cords are equal, might remove
+    function compareNodes(node1, node2)//Checks if cords are equal, might remove
     {
         return node1[0]==node2[0]&&node1[1]==node2[1]
     };
@@ -488,7 +488,7 @@
                 const {max,min,axis} =  wall_check(arr, orig)
                 const axisInfo = axis_reference[axis];
                 const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
-                return wall
+                return !wall
             }
         )
     }
@@ -532,7 +532,7 @@
         )
     }
 
-    function Astar()//should work theoretically
+    async function Astar()//should work theoretically
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
@@ -547,11 +547,20 @@
             g:0,
             h:getMDIST(startingNode, endingNode)
         }
+        const solutionSet = [];
         openList.push(testObj);
         let currentNode;
         while(openList.length>0)
         {
+            await delay(10);
             currentNode = openList[0];
+            if(compareNodes(currentNode.coordinate, endingNode))
+            {
+                //get the solution set here by backtracking 
+                currentNode.parent;
+                break;
+            }
+            console.log(currentNode.f)
             document.querySelector(`[data-coordinates="${cordString(openList[0].coordinate)}"]`).style.background =  "blue"
             const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
             for(let i = 0; i<newNeighbors.length;i++)
@@ -567,7 +576,7 @@
                 {
                     openList.push(
                         {
-                            parent:currentNode,
+                            parent:currentNode.coordinate,
                             coordinate:newNeighbors[i],
                             f:f,
                             g:g,
@@ -582,7 +591,7 @@
                         {
                             openList.splice(a, 0, 
                                 {
-                                    parent:currentNode,
+                                    parent:currentNode.coordinate,
                                     coordinate:newNeighbors[i],
                                     f:f,
                                     g:g,
