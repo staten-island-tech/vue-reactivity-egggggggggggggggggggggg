@@ -22,9 +22,9 @@
         </form>
         <form @submit.prevent="" @change="changeDifficulty" class="change_difficulty">
             <select v-model="selectedDifficulty">
-                <option value="Hard">Hard</option>
-                <option value="Medium">Medium</option>
-                <option value="Easy">Easy</option>
+                <option value="10">Hard</option>
+                <option value="20">Medium</option>
+                <option value="40">Easy</option>
             </select>
         </form>
         <form @submit.prevent="" @change="doSomething" class="change_algorithm">
@@ -56,12 +56,12 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 20;
-    let running=false;
+    let node_size = 10;
+    let running = false;
     let cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
-    const selectedDifficulty =  ref("Medium");
+    const selectedDifficulty =  ref("20");
     const selectedAlgorithm =  ref("back_recursive");
     const selectedSolvingAlgorithm =  ref("astar")
     let visualize = false;
@@ -658,10 +658,15 @@
             openList.shift();//remove from the pQueue
         }   
     }
-    //just optimize the code and remove clutter
-    //maybe add one more algorithm if enough time
-    //fix styling 
-    //break up the code into diff files
+    //basic idea
+    // f = g+h where h = the heuristic of manhattan dist between current and end 
+    //g = the current node minus the starting node. 
+    //f= priority, will be used to pick the lowest priority and continue traversing it
+    //open set =  priorit quee containing the nodes that can be selected to continue traversing down. will consist of objects and will be ordered based off of lowest priority
+    //closed set = nodes that have already been explored. if they've been explored do not traverse or add them to the open set. 
+    //Tthis will run in a while loop that does not terminate until the currentNode has arrived at the end node. 
+    //travel cost always equals 1 
+//Maze solving
 </script>
 <style scoped>
     .maze_container

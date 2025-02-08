@@ -1,6 +1,7 @@
 <template>
   <div>
     <SecondMaze></SecondMaze>
+    
   </div>
 </template>
 
