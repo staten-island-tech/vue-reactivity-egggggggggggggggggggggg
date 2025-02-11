@@ -20,11 +20,11 @@
             <button type="button" @click="doSomething" >Regenerate</button>
             <button type="button" @click="solve">Solve Points</button>
         </form>
-        <form @submit.prevent="" @change="changeDifficulty" class="change_difficulty">
-            <select v-model="selectedDifficulty">
-                <option value="Hard">Hard</option>
-                <option value="Medium">Medium</option>
-                <option value="Easy">Easy</option>
+        <form @submit.prevent="" @change="doSomething" class="change_difficulty">
+            <select v-model="node_size">
+                <option value=10>Hard</option>
+                <option value=20>Medium</option>
+                <option value=40>Easy</option>
             </select>
         </form>
         <form @submit.prevent="" @change="doSomething" class="change_algorithm">
@@ -32,10 +32,8 @@
                 <option value="kruskal">Kruskal's Algorithm</option>
                 <option value="prims">PRIMS</option>
                 <option value="back_recursive">Recursive Backtracker</option>
-                <option value="treegrow">Growing Tree</option>
-                <option value="huntkill">Hunt and Kill</option>
-                <option value="wilson">Wilson's</option>
-                <option value="eller">Eller's</option>
+                <option value="rngdfs">Randomized DFS</option>
+
             </select>
         </form>
         <form @submit.prevent="" @change="doSomething" class="chnage_solvingAlgo">
@@ -56,7 +54,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = 20;
+    let node_size = ref(20);
     let running=false;
     let cell_container = {}; 
     let selected_nodes = [];
@@ -113,16 +111,16 @@
     }
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
-        const row = Math.ceil(square_position/(width/node_size))-1;
-        const column =  square_position - ((Math.ceil(square_position/(width/node_size)) - 1)*(height/node_size))-1;
+        const row = Math.ceil(square_position/(width/node_size.value))-1;
+        const column =  square_position - ((Math.ceil(square_position/(width/node_size.value)) - 1)*(height/node_size.value))-1;
         return { column, row }
     }
     function generate_grid(border)//Border determines whether walls are generated. if true yes otherwise nah
     {
-        for(let y = 0; y<height/node_size; y++)
+        for(let y = 0; y<height/node_size.value; y++)
         {
             const row = {};
-            for(let x = 0; x<width/node_size; x++)
+            for(let x = 0; x<width/node_size.value; x++)
             {
                 row[x] =  {
                     x:x,
@@ -175,12 +173,12 @@
     }
     function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
     {
-        const borderStyle = add!=true? "none":`${node_size/40}px solid #FFFFFF`;
+        const borderStyle = add!=true? "none":`${node_size.value/40}px solid #FFFFFF`;
         const {max, min, axis} =  wall_check(a, b);
         const axis_change = axis_reference[axis];
         document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = borderStyle;
         document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = borderStyle;
-        `${node_size/40}px; solid; #FFFFFF;`
+        `${node_size.value/40}px; solid; #FFFFFF;`
 
         cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
         cell_container[min[0]][min[1]].walls[axis_change.minWall] = add;
@@ -198,7 +196,7 @@
                 {
                     return false
                 }
-                if(item[0]>(width/node_size)-1|| item[1]>(height/node_size)-1)
+                if(item[0]>(width/node_size.value)-1|| item[1]>(height/node_size.value)-1)
                 {
                     return false
                 }
@@ -226,21 +224,9 @@
         {
             await RBT();
         }
-        else if(selectedAlgorithm.value == "treegrow")
+        else if(selectedAlgorithm.value == "rngdfs")
         {
-
-        }
-        else if(selectedAlgorithm.value == "huntkill")
-        {
-
-        }
-        else if(selectedAlgorithm.value == "wilson")
-        {
-
-        }
-        else if(selectedAlgorithm.value == "ellers")
-        {
-
+            await  randomizedDFS();
         }
         //Grid_generation will be based on whether the algorithm calls for
     }
@@ -261,14 +247,6 @@
         await changeAlgorithm();
         visualize = false;
         running=false;
-    }
-    function searchObjectArray(array, subarray){//find array in an object nested in an array
-        const itemIndex = array.findIndex(object =>
-            {
-                return object.node.every((value, index) => value === subarray[index])
-            }
-        )
-        return itemIndex
     }
     function findArray(nestedArray, array)
     {
@@ -311,12 +289,12 @@
     async function randomizedDFS()
     {
         //get a random point first 
-        const random_x = Math.floor(Math.random() * (width/node_size));
-        const random_y = Math.floor(Math.random() * (height/node_size));
+        const random_x = Math.floor(Math.random() * (width/node_size.value));
+        const random_y = Math.floor(Math.random() * (height/node_size.value));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
         //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
+        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
         {
             const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
             current_neighbor_element.style.background =  "green"
@@ -330,7 +308,7 @@
                 continue;
             }
             const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize == true){await delay(delayTime.value);}
+            if(visualize){await delay(delayTime.value);}
             const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
             new_neighbor_element.style.background = "green"
             manipulate_walls(current_neighbor, new_neighbor, false);
@@ -347,11 +325,11 @@
     {
         console.log("starting prims")
         const frontier_cells = [];
-        const random_x = Math.floor(Math.random() * (width/node_size));
-        const random_y = Math.floor(Math.random() * (height/node_size));
+        const random_x = Math.floor(Math.random() * (width/node_size.value));
+        const random_y = Math.floor(Math.random() * (height/node_size.value));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
-        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
+        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
         {
             await delay(1);
             const new_neighbors =  get_neighbors(current_neighbor, true);
@@ -378,12 +356,12 @@
     }
     async function RBT()
     {
-        const random_x = Math.floor(Math.random() * (width/node_size));
-        const random_y = Math.floor(Math.random() * (height/node_size));
+        const random_x = Math.floor(Math.random() * (width/node_size.value));
+        const random_y = Math.floor(Math.random() * (height/node_size.value));
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
         const stack = [];//will record current path being taken
-        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
+        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
         {
             {await delay(delayTime.value);}
             const new_neighbors =  get_neighbors(current_neighbor, true);
@@ -416,7 +394,7 @@
     }
     function RStartNode()
     {
-        return [(Math.floor(Math.random() * (width/node_size))), (Math.floor(Math.random() * (height/node_size)))]
+        return [(Math.floor(Math.random() * (width/node_size.value))), (Math.floor(Math.random() * (height/node_size.value)))]
     }
     function combineSets(set, item)
     {
@@ -427,7 +405,7 @@
         const randomStart =  RStartNode();
         let currentNode =  randomStart;
         const mazeSet =  new Set();
-        while(mazeSet.size!=((width/node_size)*(height/node_size)))
+        while(mazeSet.size!=((width/node_size.value)*(height/node_size.value)))
         {
             const new_neighbors = get_neighbors(currentNode);
             const rnIndex = Math.floor(Math.random()*new_neighbors.length);            
@@ -447,71 +425,53 @@
     }
     async function huntkill()
     {
-        const currentNode = RStartNode();
-        const visitedNodes = [];
-        while(visited_nodes.length!=((width/node_size)*(height/node_size)))
+        async function randomizedDFS()
+    {
+        //get a random point first 
+        const visitedNodes = []
+        let current_neighbor = RStartNode();
+        visitedNodes.push(RStartNode);
+        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
+        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
         {
-            //Node management 
-            //Visited nodes will store based off of row so y value or an index of 1 
-            const newNeighbors =  get_neighbors(currentNode, true);//remove nodes that have been visited
-            if(newNeighbors.length==0)
+            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
+            current_neighbor_element.style.background =  "green"
+            const new_neighbors =  get_neighbors(current_neighbor, true);
+            new_neighbors.forEach(neighbor_item =>{
+                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
+            })
+            if(new_neighbors.length==0)//Improve this 
             {
-                //hunt for a new row to start again
-                for(let i = 0; i<(width/node_size); i++)
-                {
+                current_neighbor;
+                //impelement new selection logic here
 
-                    if(visitedNodes[i].length!=(width/node_size))
-                    {
-                        const missingCords =  findConsec(visitedNodes[i]);
-                        currentNode = [missingCords[0], i];
-                    }
-
-                }
                 continue;
             }
-            const rnIndex = getRandNumb(newNeighbors.length);
-            const nNeighbor = newNeighbors[rnIndex];
-            manipulate_walls(currentNode, nNeighbor, false);
-            currentNode = nNeighbor;
-            if(!visitedNodes[nNeighbor[1]])
-            {
-                visitedNodes[nNeighbor[1]]=[];
-            }
-            visitedNodes[nNeighbor[1]].push(nNeighbor[0]);
+            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
+            if(visualize){await delay(delayTime.value);}
+            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
+            new_neighbor_element.style.background = "green"
+            manipulate_walls(current_neighbor, new_neighbor, false);
+            current_neighbor =  new_neighbor;
+            visited_nodes.push(new_neighbor);
 
-        }   
+        }
+        console.log(cell_container)
+        document.querySelectorAll(".grid_item").forEach(element => {
+            element.style.background = "green"
+        });
+    }    
+        
     }
     function getRandNumb(max)
     {
         return Math.floor(Math.random()*max);
     }
-    function findConsec(array)
-    {
-        const missing =  [];
-        let missingCounter = 0;
-        const arrayLength = array.length;
-        if(array[0]!=0)
-        {
-            missing,push(0)
-        }
-        if(array[array.length-1]!= (width/node_size-1))
-        {
-            missing.push((width/node_size-1));
-        }
-        for(let i = 0; i<(width/node_size);i++)
-        {
-            if(array[i] != i)
-            {
-                missing,push(i)
-                missingCounter+=1;
-            }
-        }
-    }
     function GrowingTree()
     {   
         const currentNode =  RStartNode();
         const visited = [];
-        while(visited.length!=((width/node_size)*(height/node_size)))
+        while(visited.length!=((width/node_size.value)*(height/node_size.value)))
         {
 
         }
@@ -571,11 +531,63 @@
             cost+=1;
         }
         solution.forEach(coord=>
-        {
-            document.querySelector(`[data-coordinates="${cordString(coord)}"]`).style.background =  "blue"
-        }
+            {
+                document.querySelector(`[data-coordinates="${cordString(coord)}"]`).style.background =  "blue"
+            }
         )
     }
+    class BinaryHeap
+    {
+        constructor()
+        {
+            this.heap = []
+        }
+        push(i)
+        {
+            if(!heap[0])
+            {
+                heap[0]=i;
+            }
+            else if(heap[0]>i)
+            {
+                //heapify it
+            }
+
+        }
+        heapify()
+        {
+
+        }
+        left(i)//parent node input
+        {
+            return this.heap[2*i+1];
+        }
+        right(i)//parent node input
+        {
+            return this.heap[2*i+2];
+        }
+        parent(i)//child node input
+        {
+            return this.heap[Math.floor((i-1)/2)]//round down to get to the parent node
+        }
+        root()
+        {
+            return this.heap[0];
+        }
+        pushpop()
+        {
+
+        }
+    }
+    //methods needed
+    //acess a given index's left or ride
+    //impelmeent a function to add to binary heap
+    //the leaves should be placed in order from min to max order
+    //make a function to return the min element which is index 0  as root is at top
+    //handle root deletion to maintain p queue functionality 
+
+    //conditions for minheap
+
 
     async function Astar()//implement Map here 
     {
@@ -604,10 +616,6 @@
                 let found = false;
                 //get the solution set here by backtracking 
                 const parentNode = currentNode.parent;
-                while(found!=true)
-                {
-
-                }
                 return;
             }
             console.log(currentNode.f)
