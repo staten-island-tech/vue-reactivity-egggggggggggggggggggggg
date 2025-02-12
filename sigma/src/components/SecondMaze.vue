@@ -64,7 +64,7 @@
     const selectedSolvingAlgorithm =  ref("astar")
     let visualize = false;
     const containerKey = ref(0);
-    const delayTime = ref(1);
+    const delayTime = ref(1);//hqrd cap of 4ms set by the browser so anything below 4 is set to 4
 
     const axis_reference = {
         0: 
@@ -85,7 +85,7 @@
     onMounted(()=>
     {
         generate_grid(true);
-        RBT();
+        prim_generation();
     })
 
 
@@ -536,7 +536,7 @@
             }
         )
     }
-    class BinaryHeap
+    class BinaryHeap//modify this to hold objects via their f value
     {
         constructor()
         {
@@ -556,27 +556,46 @@
         getRoot()
         {
             this.swap(0,this.heap.length-1);//swap the nodes
-            this.heapify();
-            return this.heap.pop();//pops the last element(root node) and returns it afterwards
+            const root = this.heap.pop()
+            this.heapify();//make sure nodes satisfy conditions where parent is less than children
+            return root;//pops the last element(root node) and returns it afterwards
         }
         heapify()
         {
             let current = 0;
             while(true)
             {
-                
+                let smallest = current;
+                const leftIndex =  2*current+1;
+                const rightIndex =  2*current+2;
+                if(leftIndex<this.heap.length&&this.heap[current].f>this.left(current).f&&this.left(current).f<this.right(current).f)
+                {
+                    smallest = leftIndex;
+                }
+                if(rightIndex<this.heap.length&&this.heap[current].f>this.right(current).f&&this.right(current).f<this.left(current).f)
+                {
+                    smallest = rightIndex;
+                }
+
+                if(smallest!==current)
+                {
+                    this.swap(current, smallest);
+                    current=smallest;
+                }
+                else
+                {
+                    break;
+                }
+
             }
         }
         swap(a,b)
         {
-            [arr[a], arr[b]] =  [arr[b], arr[b]];
-        }
-        heapify()
-        {
-
+            [this.heap[a], this.heap[b]] =  [this.heap[b], this.heap[a]];
         }
         left(i)//parent node input
         {
+            
             return this.heap[2*i+1];
         }
         right(i)//parent node input
@@ -589,14 +608,6 @@
         }
 
     }
-    //methods needed
-    //acess a given index's left or ride
-    //impelmeent a function to add to binary heap
-    //the leaves should be placed in order from min to max order
-    //make a function to return the min element which is index 0  as root is at top
-    //handle root deletion to maintain p queue functionality 
-
-    //conditions for minheap
 
 
     async function Astar()//implement Map here 
@@ -631,7 +642,7 @@
             console.log(currentNode.f)
             document.querySelector(`[data-coordinates="${cordString(openList[0].coordinate)}"]`).style.background =  "purple"
             const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
-            for(let i = 0; i<newNeighbors.length;i++)
+            for(let i = 0; i<newNeighbors.length;i++)//use binary heap for this
             {
                 if(findArray(visited, newNeighbors[i])!= -1)
                 {
