@@ -546,7 +546,7 @@
         {
             this.heap.push(i);
             let currentIndex =  this.heap.length-1;
-            while(this.parent(currentIndex)>this.heap[currentIndex])
+            while(this.parent(currentIndex).f>this.heap[currentIndex].f)
             {
                 const parentIndex =  Math.floor((currentIndex-1)/2);
                 this.swap(currentIndex, parentIndex);
@@ -555,6 +555,7 @@
         }
         getRoot()
         {
+            if(this.heap.length ===0){return null}
             this.swap(0,this.heap.length-1);//swap the nodes
             const root = this.heap.pop()
             this.heapify();//make sure nodes satisfy conditions where parent is less than children
@@ -576,7 +577,6 @@
                 {
                     smallest = rightIndex;
                 }
-
                 if(smallest!==current)
                 {
                     this.swap(current, smallest);
@@ -595,7 +595,6 @@
         }
         left(i)//parent node input
         {
-            
             return this.heap[2*i+1];
         }
         right(i)//parent node input
@@ -616,6 +615,7 @@
         const endingNode =  stringCord(selected_nodes[1]);
         const closedList =  [];//Stores the already traversed nodes 
         const openList = [];//Queue based list lowest p =  first out
+        const pQueue =  new BinaryHeap();
         const visited = [];
         const testObj =
         {

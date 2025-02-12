@@ -1,12 +1,13 @@
 <template>
   <div>
-    <SecondMaze></SecondMaze>
+    <TheBackup></TheBackup>
     
   </div>
 </template>
 
 <script setup>
   import SecondMaze from './components/SecondMaze.vue';
+import TheBackup from './components/TheBackup.vue';
   
 </script>
 
