@@ -542,17 +542,34 @@
         {
             this.heap = []
         }
-        push(i)
+        heapadd(i)
         {
-            if(!heap[0])
+            this.heap.push(i);
+            let currentIndex =  this.heap.length-1;
+            while(this.parent(currentIndex)>this.heap[currentIndex])
             {
-                heap[0]=i;
+                const parentIndex =  Math.floor((currentIndex-1)/2);
+                this.swap(currentIndex, parentIndex);
+                currentIndex =  parentIndex;
             }
-            else if(heap[0]>i)
+        }
+        getRoot()
+        {
+            this.swap(0,this.heap.length-1);//swap the nodes
+            this.heapify();
+            return this.heap.pop();//pops the last element(root node) and returns it afterwards
+        }
+        heapify()
+        {
+            let current = 0;
+            while(true)
             {
-                //heapify it
+                
             }
-
+        }
+        swap(a,b)
+        {
+            [arr[a], arr[b]] =  [arr[b], arr[b]];
         }
         heapify()
         {
@@ -570,14 +587,7 @@
         {
             return this.heap[Math.floor((i-1)/2)]//round down to get to the parent node
         }
-        root()
-        {
-            return this.heap[0];
-        }
-        pushpop()
-        {
 
-        }
     }
     //methods needed
     //acess a given index's left or ride
