@@ -550,8 +550,8 @@
             {
                 return;
             }
-            console.log(this.parent(currentIndex))
-            while(this.parent(currentIndex).f>this.heap[currentIndex].f)
+            console.log(this.parent(currentIndex), this.heap[currentIndex].f)
+            while(this.parent(currentIndex)&&this.parent(currentIndex).f>this.heap[currentIndex].f)
             {
                 const parentIndex =  Math.floor((currentIndex-1)/2);
                 this.swap(currentIndex, parentIndex);
@@ -574,11 +574,13 @@
                 let smallest = current;
                 const leftIndex =  2*current+1;
                 const rightIndex =  2*current+2;
-                if(leftIndex<this.heap.length&&this.heap[current].f>this.left(current).f&&this.left(current).f<this.right(current).f)
+    
+
+                if(this.left(current)&&this.heap[leftIndex].f < this.heap[smallest].f)
                 {
                     smallest = leftIndex;
                 }
-                if(rightIndex<this.heap.length&&this.heap[current].f>this.right(current).f&&this.right(current).f<this.left(current).f)
+                if(this.right(current)&&this.heap[rightIndex].f < this.heap[smallest].f)
                 {
                     smallest = rightIndex;
                 }
@@ -622,7 +624,7 @@
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
-        const closedList =  [];//Stores the already traversed nodes 
+        const closedList =  {};//Stores the already traversed nodes 
         const openList = [];//Queue based list lowest p =  first out
         const pQueue =  new BinaryHeap();
         //visited should be a set
@@ -638,27 +640,34 @@
         }
         const solutionSet = [];
         pQueue.heapadd(testObj)
-        console.log(pQueue)
         let currentNode;
         while(pQueue.length()>0)
         {
             await delay(1)
             currentNode = pQueue.getRoot();
-            console.log(currentNode)
             if(compareNodes(currentNode.coordinate, endingNode))
             {
                 let found = false;
+                console.log("tracing path")
+                const solutionSet=[currentNode.parent]
                 //get the solution set here by backtracking 
                 //we get this by checking the closedset as since we know that we have moved all the previous explored nodes into this we can search it to backtrack to the start
-
-                const parentNode = currentNode.parent;
+                let parentNode =  currentNode.parent
+                console.log(parentNode);
+                while(compareNodes(parentNode, startingNode)!=true)//backtracing
+                {
+                    solutionSet.push(closedList[parentNode].coordinate)
+                    document.querySelector(`[data-coordinates="${cordString(parentNode)}"]`).style.background =  "#ff00f7"
+                    parentNode = closedList[parentNode].parent;
+                    console.log("attempted node")
+                }
+                //once the solution has been found return it and also highlight it 
+                
+    
                 return;
             }
             document.querySelector(`[data-coordinates="${cordString(currentNode.coordinate)}"]`).style.background =  "purple"
-            console.log("trying wallWrapper FUNCTION")
             const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
-            console.log("WALLWRAPPER ACHIEVED")
-            console.log(newNeighbors)
             for(let i = 0; i<newNeighbors.length;i++)//use binary heap for this
             {
                 if(findArray(visited, newNeighbors[i])!= -1)//use a set method here to optimize it or smth
@@ -668,6 +677,7 @@
                 const h = getMDIST(endingNode, newNeighbors[i])
                 const g =  1+currentNode.g
                 const f =  h+g;
+                console.log(pQueue)
                 pQueue.heapadd(
                     {
                         parent:currentNode.coordinate,
@@ -680,9 +690,10 @@
                 console.log(pQueue)
                 visited.push(newNeighbors[i]);
             }
-            closedList.push(currentNode);//add to the closed set, also make sure to place is in object order where the coordinate of it is serialized to make it easier to acess.
+            const serializedKey = cordString(currentNode.coordinate)
+            closedList[serializedKey] =  currentNode;
+            //add to the closed set, also make sure to place is in object order where the coordinate of it is serialized to make it easier to acess.
         }   
-        console.log("skipped")
     }
     //just optimize the code and remove clutter
     //maybe add one more algorithm if enough time
