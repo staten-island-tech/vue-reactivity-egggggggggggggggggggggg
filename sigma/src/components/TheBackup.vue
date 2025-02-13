@@ -54,7 +54,7 @@
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = ref(20);
+    let node_size = ref(10);
     let running=false;
     let cell_container = {}; 
     let selected_nodes = [];
@@ -87,9 +87,6 @@
         generate_grid(true);
         prim_generation();
     })
-
-
-
 //Methods
     function solve()
     {
@@ -548,6 +545,7 @@
             let currentIndex =  this.heap.length-1;
             if(currentIndex==0)//if only one element in the list total just avoid the checks
             {
+
                 return;
             }
             console.log(this.parent(currentIndex), this.heap[currentIndex].f)
@@ -618,8 +616,6 @@
         }
 
     }
-
-
     async function Astar()//implement Map here 
     {
         const startingNode = stringCord(selected_nodes[0]);
@@ -643,7 +639,6 @@
         let currentNode;
         while(pQueue.length()>0)
         {
-            await delay(1)
             currentNode = pQueue.getRoot();
             if(compareNodes(currentNode.coordinate, endingNode))
             {
@@ -657,7 +652,7 @@
                 while(compareNodes(parentNode, startingNode)!=true)//backtracing
                 {
                     solutionSet.push(closedList[parentNode].coordinate)
-                    document.querySelector(`[data-coordinates="${cordString(parentNode)}"]`).style.background =  "#ff00f7"
+                    document.querySelector(`[data-coordinates="${cordString(parentNode)}"]`).style.background =  "blue"
                     parentNode = closedList[parentNode].parent;
                     console.log("attempted node")
                 }
