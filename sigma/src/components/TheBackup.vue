@@ -494,6 +494,46 @@
             }
         )
     }
+    function BFS2()//add visualization mightahve bugs 
+    {
+        const endingNode  = stringCord(selected_nodes[1]);
+        const startingNode =  stringCord(selected_nodes[0]);
+        let currentNode = stringCord(selected_nodes[0]);
+        const visited =  new Map();
+        const queue = [currentNode];
+        visited.set(currentNode, null);//no pre existing parent node so just put null
+        while(queue.length > 0)
+        {
+            currentNode = queue.shift();
+            if(cordString(currentNode)==cordString(endingNode))
+            {   
+                let bt = currentNode;
+                const solutionSet = [bt]
+                while(true)
+                {
+                    document.querySelector(`[data-coordinates="${cordString(bt)}"]`).style.background =  "blue";
+                    if(cordString(bt)==(cordString(startingNode)))
+                    {
+                        return;
+                    }
+                    bt = visited.get(cordString(bt));//gets the parent node of the currentNode
+                    solutionSet.push(bt);
+                }
+                return;
+            }
+            const newNeighbors = wallWrapper(get_neighbors(currentNode, false), currentNode);
+            for(let i = 0; i<newNeighbors.length;i++)
+            {
+                if(!visited.has(cordString(newNeighbors[i])))
+                {
+                    queue.push(newNeighbors[i]);
+                    visited.set(cordString(newNeighbors[i]), currentNode);
+                }//dont add if its already been visited
+            }
+            //get the first element from the list and remove it 
+            //continue until it finds node
+        }
+    }
     function BFS()
     {
         const startingNode =  stringCord(selected_nodes[0]);
