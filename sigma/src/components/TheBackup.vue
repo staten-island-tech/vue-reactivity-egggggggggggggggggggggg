@@ -261,12 +261,12 @@
         if(gridItem && selected_nodes.length < 2 && !selected_nodes.includes(node_point))
         {
             selected_nodes.push(node_point);
-            gridItem.style.background = "red"
+            gridItem.style.background = "red";
         }
         else if(selected_nodes.includes(node_point))
         {
             selected_nodes = selected_nodes.filter(x => x !== node_point);
-            gridItem.style.background = 'green'
+            gridItem.style.background = 'green';
         }
         console.log(selected_nodes)
     }
@@ -483,7 +483,7 @@
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
     }
-    function wallWrapper(array, orig)
+    function wallWrapper(array, orig)//this can be def improved
     {
         return array.filter(arr=>
             {
@@ -624,7 +624,7 @@
         const openList = [];//Queue based list lowest p =  first out
         const pQueue =  new BinaryHeap();
         //visited should be a set
-        const visited = [];
+        const visited = new Set();
     
         const testObj =
         {
@@ -645,8 +645,6 @@
                 let found = false;
                 console.log("tracing path")
                 const solutionSet=[currentNode.parent]
-                //get the solution set here by backtracking 
-                //we get this by checking the closedset as since we know that we have moved all the previous explored nodes into this we can search it to backtrack to the start
                 let parentNode =  currentNode.parent
                 console.log(parentNode);
                 while(compareNodes(parentNode, startingNode)!=true)//backtracing
@@ -656,19 +654,12 @@
                     parentNode = closedList[parentNode].parent;
                     console.log("attempted node")
                 }
-                //once the solution has been found return it and also highlight it 
-                
-    
                 return;
             }
-            document.querySelector(`[data-coordinates="${cordString(currentNode.coordinate)}"]`).style.background =  "purple"
             const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
             for(let i = 0; i<newNeighbors.length;i++)//use binary heap for this
             {
-                if(findArray(visited, newNeighbors[i])!= -1)//use a set method here to optimize it or smth
-                {
-                    continue;
-                }
+                if(visited.has(cordString(newNeighbors[i])))continue;
                 const h = getMDIST(endingNode, newNeighbors[i])
                 const g =  1+currentNode.g
                 const f =  h+g;
@@ -683,7 +674,7 @@
                     }
                 )
                 console.log(pQueue)
-                visited.push(newNeighbors[i]);
+                visited.add(cordString(newNeighbors[i]));
             }
             const serializedKey = cordString(currentNode.coordinate)
             closedList[serializedKey] =  currentNode;
