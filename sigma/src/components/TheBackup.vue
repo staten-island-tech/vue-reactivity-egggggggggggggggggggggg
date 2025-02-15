@@ -36,7 +36,7 @@
 
             </select>
         </form>
-        <form @submit.prevent="" @change="doSomething" class="chnage_solvingAlgo">
+        <form @submit.prevent="" class="chnage_solvingAlgo">
             <select v-model="selectedSolvingAlgorithm">
                 <option value="astar">A*</option>
                 <option value="bfs">Breadth-First-Search</option>
@@ -49,19 +49,21 @@
     </div>
 </template>
 <script setup>  
-    //note x =  column and y = row
-    //in divs its x, y format
+    //problems
+    //recalculation of elements when form submission despite @submit.prevent
+    //using classes might fix idk tho
+
     import { ref, onMounted} from 'vue';
     const width = 800;
     const height =  800;
-    let node_size = ref(10);
+    let node_size = ref(20);
     let running=false;
     let cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
     const selectedAlgorithm =  ref("back_recursive");
-    const selectedSolvingAlgorithm =  ref("astar")
+    const selectedSolvingAlgorithm =  ref("bfs")
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(1);//hqrd cap of 4ms set by the browser so anything below 4 is set to 4
@@ -88,6 +90,49 @@
         prim_generation();
     })
 //Methods
+    function handleChange()
+    {
+
+    }
+    async function changeAlgorithm()//Async algo cuz im using delay to make it easier for user to see the cvhanges happen
+    {
+
+        if(selectedAlgorithm.value == "kruskal")
+        {
+
+        }
+        else if(selectedAlgorithm.value == "prims")
+        {
+            await prim_generation();
+        }
+        else if(selectedAlgorithm.value == "back_recursive")
+        {
+            await RBT();
+        }
+        else if(selectedAlgorithm.value == "rngdfs")
+        {
+            await  randomizedDFS();
+        }
+        //Grid_generation will be based on whether the algorithm calls for
+    }
+    function changeDifficulty()//Just changes the node size thats really it
+    {
+        console.log(selectedDifficulty.value);
+    }
+    async function doSomething()//Visualizier for the current algorithm
+    {
+        if(running==true){return};
+        running=true;
+        containerKey.value+=1;
+        visited_nodes.length = 0;
+        selected_nodes = [];
+        visualize = true
+        cell_container = {};
+        generate_grid(true)
+        await changeAlgorithm();
+        visualize = false;
+        running=false;
+    }
     function solve()
     {
         //check for two points selected
@@ -110,7 +155,7 @@
     {
         const row = Math.ceil(square_position/(width/node_size.value))-1;
         const column =  square_position - ((Math.ceil(square_position/(width/node_size.value)) - 1)*(height/node_size.value))-1;
-        return { column, row }
+        return { column, row };
     }
     function generate_grid(border)//Border determines whether walls are generated. if true yes otherwise nah
     {
@@ -145,7 +190,7 @@
     {
         return string.split(",").map(num=> parseInt(num, 10))
     };
-    function compareNodes(node1, node2)//Checks if cords are equal, might remove
+    function compareNodes(node1, node2)//more efficient than stringCord for comparing nodes
     {
         return node1[0]==node2[0]&&node1[1]==node2[1]
     };
@@ -206,54 +251,6 @@
         )
         return possible_neighbors;
     }
-    async function changeAlgorithm()//Async algo cuz im using delay to make it easier for user to see the cvhanges happen
-    {
-
-        if(selectedAlgorithm.value == "kruskal")
-        {
-
-        }
-        else if(selectedAlgorithm.value == "prims")
-        {
-            await prim_generation();
-        }
-        else if(selectedAlgorithm.value == "back_recursive")
-        {
-            await RBT();
-        }
-        else if(selectedAlgorithm.value == "rngdfs")
-        {
-            await  randomizedDFS();
-        }
-        //Grid_generation will be based on whether the algorithm calls for
-    }
-    function changeDifficulty()//Just changes the node size thats really it
-    {
-        console.log(selectedDifficulty.value);
-    }
-    async function doSomething()//Visualizier for the current algorithm
-    {
-        if(running==true){return};
-        running=true;
-        containerKey.value+=1;
-        visited_nodes.length = 0;
-        selected_nodes = [];
-        visualize = true
-        cell_container = {};
-        generate_grid(true)
-        await changeAlgorithm();
-        visualize = false;
-        running=false;
-    }
-    function findArray(nestedArray, array)
-    {
-        const itemIndex = nestedArray.findIndex(subarray=>
-            {
-                return subarray.length ==  array.length && subarray.every((val, i)=>val===array[i])
-            }
-        )
-        return itemIndex;
-    }
     function findNearestSquare(event)//Finds the current square the user has clicked on
     {
         const gridItem = event.target.closest(".grid_item");
@@ -283,7 +280,7 @@
 
 
 //Maze creation
-    async function randomizedDFS()
+    async function randomizedDFS()//this needs to be tweaked also do not run this 
     {
         //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size.value));
@@ -321,9 +318,9 @@
     async function prim_generation()//Attempt 2
     {
         console.log("starting prims")
-        const frontier_cells = [];
+        const frontier_cells = [];//replace with set
         const random_x = Math.floor(Math.random() * (width/node_size.value));
-        const random_y = Math.floor(Math.random() * (height/node_size.value));
+        const random_y = Math.floor(Math.random() * (height/node_size.value));//limit the visitedNodes set to here;
         visited_nodes.push([random_x, random_y]);
         let current_neighbor = [random_x, random_y];
         while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
@@ -397,93 +394,18 @@
     {
         return JSON.stringify(set).includes(JSON.stringify(item));
     }
-    async function Kruskals()
-    {
-        const randomStart =  RStartNode();
-        let currentNode =  randomStart;
-        const mazeSet =  new Set();
-        while(mazeSet.size!=((width/node_size.value)*(height/node_size.value)))
-        {
-            const new_neighbors = get_neighbors(currentNode);
-            const rnIndex = Math.floor(Math.random()*new_neighbors.length);            
-            const randNeighbor = new_neighbors[rnIndex];
-            if(randNeighbor in mazeSet || currentNode in mazeSet)
-            {
-                combineSets()
-            }
-            if(true)
-            {
-                manipulate_walls(currentNode,new_neighbors[rnIndex], false);
-                //change the coloring
-            }
-            currentNode = RStartNode();//get a new starting node 
-        }
 
-    }
-    async function huntkill()
-    {
-        async function randomizedDFS()
-    {
-        //get a random point first 
-        const visitedNodes = []
-        let current_neighbor = RStartNode();
-        visitedNodes.push(RStartNode);
-        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
-        {
-            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
-            current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor, true);
-            new_neighbors.forEach(neighbor_item =>{
-                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
-            })
-            if(new_neighbors.length==0)//Improve this 
-            {
-                current_neighbor;
-                //impelement new selection logic here
-
-                continue;
-            }
-            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize){await delay(delayTime.value);}
-            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
-            new_neighbor_element.style.background = "green"
-            manipulate_walls(current_neighbor, new_neighbor, false);
-            current_neighbor =  new_neighbor;
-            visited_nodes.push(new_neighbor);
-
-        }
-        console.log(cell_container)
-        document.querySelectorAll(".grid_item").forEach(element => {
-            element.style.background = "green"
-        });
-    }    
-        
-    }
-    function getRandNumb(max)
-    {
-        return Math.floor(Math.random()*max);
-    }
-    function GrowingTree()
-    {   
-        const currentNode =  RStartNode();
-        const visited = [];
-        while(visited.length!=((width/node_size.value)*(height/node_size.value)))
-        {
-
-        }
-    }
 //Maze creation
 
 
 
 
-//Maze solving
+//These works dont tweak
     function getMDIST(node1, node2)
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
     }
-    function wallWrapper(array, orig)//this can be def improved
+    function wallWrapper(array, orig)//made this cuz im lazy
     {
         return array.filter(arr=>
             {
@@ -491,85 +413,6 @@
                 const axisInfo = axis_reference[axis];
                 const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
                 return !wall
-            }
-        )
-    }
-    function BFS2()//add visualization mightahve bugs 
-    {
-        const endingNode  = stringCord(selected_nodes[1]);
-        const startingNode =  stringCord(selected_nodes[0]);
-        let currentNode = stringCord(selected_nodes[0]);
-        const visited =  new Map();
-        const queue = [currentNode];
-        visited.set(currentNode, null);//no pre existing parent node so just put null
-        while(queue.length > 0)
-        {
-            currentNode = queue.shift();
-            if(cordString(currentNode)==cordString(endingNode))
-            {   
-                let bt = currentNode;
-                const solutionSet = [bt]
-                while(true)
-                {
-                    document.querySelector(`[data-coordinates="${cordString(bt)}"]`).style.background =  "blue";
-                    if(cordString(bt)==(cordString(startingNode)))
-                    {
-                        return;
-                    }
-                    bt = visited.get(cordString(bt));//gets the parent node of the currentNode
-                    solutionSet.push(bt);
-                }
-                return;
-            }
-            const newNeighbors = wallWrapper(get_neighbors(currentNode, false), currentNode);
-            for(let i = 0; i<newNeighbors.length;i++)
-            {
-                if(!visited.has(cordString(newNeighbors[i])))
-                {
-                    queue.push(newNeighbors[i]);
-                    visited.set(cordString(newNeighbors[i]), currentNode);
-                }//dont add if its already been visited
-            }
-            //get the first element from the list and remove it 
-            //continue until it finds node
-        }
-    }
-    function BFS()
-    {
-        const startingNode =  stringCord(selected_nodes[0]);
-        const endingNode  = stringCord(selected_nodes[1]);
-        let currentNode;
-        const solution = [];
-        const frontier = [];
-        const visited = [];
-        let cost = 0;
-        frontier.push(startingNode);
-        visited.push(startingNode);
-        while(frontier.length!=0)
-        {
-            currentNode = frontier[0];
-            frontier.shift();
-            if(currentNode==endingNode)
-            {
-                solution.push(currentNode)
-                break;
-            }
-            solution.push(currentNode);
-            const nNeighbors =  wallWrapper(get_neighbors(currentNode, false),currentNode);
-            for(let i = 0; i<nNeighbors.length;i++)
-            {
-                document.querySelector(`[data-coordinates="${cordString(nNeighbors[i])}"]`).style.background =  "red"
-                if(findArray(visited, nNeighbors[i])==-1)
-                {
-                    frontier.push(nNeighbors[i]);
-                    visited.push(nNeighbors[i]);
-                }
-            }
-            cost+=1;
-        }
-        solution.forEach(coord=>
-            {
-                document.querySelector(`[data-coordinates="${cordString(coord)}"]`).style.background =  "blue"
             }
         )
     }
@@ -674,7 +517,6 @@
             g:0,
             h:getMDIST(startingNode, endingNode)
         }
-        const solutionSet = [];
         pQueue.heapadd(testObj)
         let currentNode;
         while(pQueue.length()>0)
@@ -683,16 +525,13 @@
             if(compareNodes(currentNode.coordinate, endingNode))
             {
                 let found = false;
-                console.log("tracing path")
                 const solutionSet=[currentNode.parent]
                 let parentNode =  currentNode.parent
-                console.log(parentNode);
                 while(compareNodes(parentNode, startingNode)!=true)//backtracing
                 {
                     solutionSet.push(closedList[parentNode].coordinate)
                     document.querySelector(`[data-coordinates="${cordString(parentNode)}"]`).style.background =  "blue"
                     parentNode = closedList[parentNode].parent;
-                    console.log("attempted node")
                 }
                 return;
             }
@@ -703,7 +542,6 @@
                 const h = getMDIST(endingNode, newNeighbors[i])
                 const g =  1+currentNode.g
                 const f =  h+g;
-                console.log(pQueue)
                 pQueue.heapadd(
                     {
                         parent:currentNode.coordinate,
@@ -713,13 +551,58 @@
                         h:h
                     }
                 )
-                console.log(pQueue)
                 visited.add(cordString(newNeighbors[i]));
             }
             const serializedKey = cordString(currentNode.coordinate)
             closedList[serializedKey] =  currentNode;
             //add to the closed set, also make sure to place is in object order where the coordinate of it is serialized to make it easier to acess.
         }   
+    }
+    async function BFS()//add visualization mightahve bugs 
+    {
+        const endingNode  = stringCord(selected_nodes[1]);
+        const startingNode =  stringCord(selected_nodes[0]);
+        let currentNode = stringCord(selected_nodes[0]);
+        const visited =  new Map();
+        const queue = [currentNode];
+        console.log("BFS RUNNING")
+        visited.set(currentNode, null);//no pre existing parent node so just put null
+        while(queue.length > 0)
+        {
+            await delay(4);
+            currentNode = queue.shift();
+            if(cordString(currentNode)==cordString(endingNode))
+            {   
+                let bt = currentNode;
+                const solutionSet = [bt]
+                while(true)
+                {
+                    document.querySelector(`[data-coordinates="${cordString(bt)}"]`).style.background =  "blue";
+                    if(cordString(bt)==(cordString(startingNode)))
+                    {
+                        return;
+                    }
+                    bt = visited.get(cordString(bt));//gets the parent node of the currentNode
+                    solutionSet.push(bt);
+                }
+            }
+            const newNeighbors = wallWrapper(get_neighbors(currentNode, false), currentNode);
+            for(let i = 0; i<newNeighbors.length;i++)
+            {
+                if(!visited.has(cordString(newNeighbors[i])))
+                {
+                    document.querySelector(`[data-coordinates="${cordString(newNeighbors[i])}"]`).style.background =  "purple";
+                    queue.push(newNeighbors[i]);
+                    visited.set(cordString(newNeighbors[i]), currentNode);
+                }//dont add if its already been visited
+            }
+            //get the first element from the list and remove it 
+            //continue until it finds node
+        }
+    }
+    async function GBFS()//greedy best first search
+    {
+
     }
     //just optimize the code and remove clutter
     //maybe add one more algorithm if enough time
