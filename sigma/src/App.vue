@@ -1,12 +1,13 @@
 <template>
   <div>
-    <TheBackup></TheBackup>
+    <BackupTwo></BackupTwo>
     
   </div>
 </template>
 
 <script setup>
-  import TheBackup from './components/TheBackup.vue';
+  import BackupTwo from './components/BackupTwo.vue';
+import TheBackup from './components/TheBackup.vue';
   
 </script>
 

@@ -57,17 +57,22 @@
     //pre-defined sizes:  20*20, 40*40, 80*80;
     //use js to determine the vh and assign the node size and height. some options will be limited due to device size 
 
+
+    //to do list
+    //leverage reactive() by creating something with all of the styles properties such as border background etc
+    //change those values? 
+    //something function or smth idk
     
     const width = 800;
     const height =  800;
-    let node_size = ref(20);
+    let node_size = ref(10);
     let running=false;
     let cell_container = {}; 
     let selected_nodes = [];
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
     const selectedAlgorithm =  ref("back_recursive");
-    const selectedSolvingAlgorithm =  ref("bfs")
+    const selectedSolvingAlgorithm =  ref("astar")
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(1);//hqrd cap of 4ms set by the browser so anything below 4 is set to 4
@@ -95,8 +100,11 @@
     }
     onMounted(()=>
     {
+        const start =  performance.now();
         generate_grid(true);
-        prim_generation();
+        RBT();
+        const end = performance.now();
+        console.log(`took ${end-start} ms`)
     })
 
     
@@ -127,10 +135,6 @@
             await  randomizedDFS();
         }
         //Grid_generation will be based on whether the algorithm calls for
-    }
-    function changeDifficulty()//Just changes the node size thats really it
-    {
-        console.log(selectedDifficulty.value);
     }
     async function doSomething()//Visualizier for the current algorithm
     {
@@ -276,15 +280,6 @@
         }
         console.log(selected_nodes)
     }
-    function findArrayCubed(arrayCubed, array)
-    {
-        const itemIndex = arrayCubed.findIndex(subarray=>
-            {
-                return subarray[0].length ==  array.length && subarray[0].every((val, i)=>val===array[i])
-            }
-        )
-        return itemIndex;
-    }
 //Methods
 
 
@@ -364,28 +359,44 @@
             current = stringCord(randFrontNode[0]);
         }
     }
-    async function RBT2()
+    async function RBT()
     {
         const random_x = randNumb(0, (width/node_size.value));
         const random_y = randNumb(0, (height/node_size.value));
         const visited = new Set();
+        const stack = [];
         let current = [random_x, random_y];
         visited.add(cordString(current));
         while(visited.size!=totalNodes)
         {
             if(visualize){await delay(4)}
-            const newNeighbors = get_neighbors(current_neighbor, true);
-            for(let i=0;i<newNeighbors.length;i++)
+            const newNeighbors = get_neighbors(current, true).filter(item=>
             {
-                if(visited.has(cordString(newNeighbors[i])))
-                {
-                    continue;
-                }
+            if(visited.has(cordString(item))){
+                return false
+            }
+            if(visualize){document.querySelector(`[data-coordinates="${cordString(item)}"]`).style.background = "red"}
+            return true;
+            }
+            );
+            if(newNeighbors.length>0)
+            {
+                const newNeighbor =  newNeighbors[randNumb(0, newNeighbors.length)];
+                manipulate_walls(current, newNeighbor);
+                current = newNeighbor;
+                visited.add(cordString(newNeighbor));
+                stack.push(newNeighbor);
+            }
+            else
+            {
+                current =  stack.at(-1)
+                if(visualize){document.querySelector(`[data-coordinates="${cordString(current)}"]`).style.background = "orange";}
+                stack.pop();
             }
         }
     }
 
-    async function RBT()
+    async function wrqw()
     {
         const random_x = Math.floor(Math.random() * (width/node_size.value));
         const random_y = Math.floor(Math.random() * (height/node_size.value));
@@ -628,10 +639,6 @@
             //get the first element from the list and remove it 
             //continue until it finds node
         }
-    }
-    async function GBFS()//greedy best first search
-    {
-
     }
     //just optimize the code and remove clutter
     //maybe add one more algorithm if enough time

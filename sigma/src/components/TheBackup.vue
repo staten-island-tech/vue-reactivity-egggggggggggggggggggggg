@@ -60,7 +60,7 @@
     
     const width = 800;
     const height =  800;
-    let node_size = ref(20);
+    let node_size = ref(10);
     let running=false;
     let cell_container = {}; 
     let selected_nodes = [];
@@ -97,7 +97,7 @@
     {
         generate_grid(true);
         const start =  performance.now()
-        prim_generation();
+        RBT();
         const end =  performance.now()
         console.log(`took ${end-start} ms`);
     })
@@ -374,7 +374,7 @@
         const stack = [];//will record current path being taken
         while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
         {
-            {await delay(delayTime.value);}
+            if(visualize){await delay(delayTime.value);}
             const new_neighbors =  get_neighbors(current_neighbor, true);
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
