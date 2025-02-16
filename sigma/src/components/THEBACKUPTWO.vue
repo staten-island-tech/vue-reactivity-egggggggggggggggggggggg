@@ -9,7 +9,7 @@
         <div 
             v-for="n in (width/node_size) * (height/node_size)":key="n"
             class="grid_item"
-            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`${node_size/40}px solid #FFFFFF`}"
+            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`1px solid #FFFFFF`}"
             :data-coordinates="`${assign_cords(n).column},${assign_cords(n).row}`"
         >
 
@@ -36,7 +36,7 @@
 
             </select>
         </form>
-        <form @submit.prevent="" @change="doSomething" class="chnage_solvingAlgo">
+        <form @submit.prevent="" class="chnage_solvingAlgo">
             <select v-model="selectedSolvingAlgorithm">
                 <option value="astar">A*</option>
                 <option value="bfs">Breadth-First-Search</option>
@@ -49,9 +49,15 @@
     </div>
 </template>
 <script setup>  
-    //note x =  column and y = row
-    //in divs its x, y format
+    //problems
+    //recalculation of elements when form submission despite @submit.prevent
+    //using classes might fix idk tho
+
     import { ref, onMounted} from 'vue';
+    //pre-defined sizes:  20*20, 40*40, 80*80;
+    //use js to determine the vh and assign the node size and height. some options will be limited due to device size 
+
+    
     const width = 800;
     const height =  800;
     let node_size = ref(20);
@@ -61,10 +67,15 @@
     let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
     const selectedAlgorithm =  ref("back_recursive");
-    const selectedSolvingAlgorithm =  ref("astar")
+    const selectedSolvingAlgorithm =  ref("bfs")
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(1);//hqrd cap of 4ms set by the browser so anything below 4 is set to 4
+    const totalNodes =  ((width/node_size.value)*(height/node_size.value));
+    const WindowWidth =  window.innerWidth;
+    const WindowHeight =  window.innerHeight;
+
+    console.log(WindowWidth, WindowHeight);
 
     const axis_reference = {
         0: 
@@ -88,126 +99,13 @@
         prim_generation();
     })
 
+    
 
 
 //Methods
-    function solve()
+    function handleChange()
     {
-        //check for two points selected
-        if(selected_nodes.length<2)
-        {
-            console.log("select two points");
-            return
-        }
-        if(selectedSolvingAlgorithm.value=="astar")
-        {
-            Astar();
-        }
-        else if(selectedSolvingAlgorithm.value == "bfs")
-        {
-            BFS();
-        }
-        selected_nodes.length == 0;
-    }
-    function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
-    {
-        const row = Math.ceil(square_position/(width/node_size.value))-1;
-        const column =  square_position - ((Math.ceil(square_position/(width/node_size.value)) - 1)*(height/node_size.value))-1;
-        return { column, row }
-    }
-    function generate_grid(border)//Border determines whether walls are generated. if true yes otherwise nah
-    {
-        for(let y = 0; y<height/node_size.value; y++)
-        {
-            const row = {};
-            for(let x = 0; x<width/node_size.value; x++)
-            {
-                row[x] =  {
-                    x:x,
-                    y:y,
-                    walls:{
-                        left:border,
-                        right:border, 
-                        top:border,
-                        bottom:border, 
-                    }
-                }
-            }
-            cell_container[y] = row
-        }
-    }
-    function delay(ms)//Delay function utilizing promise
-    {
-        return new Promise(resolve=>setTimeout(resolve, ms))
-    }
-    function cordString(coords)//Convert cord to string
-    {
-        return `${coords[0]},${coords[1]}`
-    };
-    function stringCord(string)//Same thing but string to cord now
-    {
-        return string.split(",").map(num=> parseInt(num, 10))
-    };
-    function compareNodes(node1, node2)//Checks if cords are equal, might remove
-    {
-        return node1[0]==node2[0]&&node1[1]==node2[1]
-    };
-    function wall_check(a,b)//Checks two cords and return what walls to modify or check
-    {
-        if(a[0]===b[0])
-        {
-            return {
-                max:a[1] > b[1] ? a : b,
-                min:a[1] > b[1] ? b : a,
-                axis :  1
-            }
-        }
-        else if(a[1]===b[1])
-        {
-            return {
-                max:a[0] > b[0] ? a : b,
-                min:a[0] > b[0] ? b : a,
-                axis :  0
-            }
-        }
-    }
-    function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
-    {
-        const borderStyle = add!=true? "none":`${node_size.value/40}px solid #FFFFFF`;
-        const {max, min, axis} =  wall_check(a, b);
-        const axis_change = axis_reference[axis];
-        document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = borderStyle;
-        document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = borderStyle;
-        `${node_size.value/40}px; solid; #FFFFFF;`
 
-        cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
-        cell_container[min[0]][min[1]].walls[axis_change.minWall] = add;
-    }
-    function get_neighbors(cord,removeSetNeighbors)//Return neighbors of a given cord, could prob remove having to add two cords
-    {
-        const neighbors = []
-        neighbors.push([cord[0]-1, cord[1]]);
-        neighbors.push([cord[0]+1, cord[1]]);
-        neighbors.push([cord[0], cord[1]+1]);
-        neighbors.push([cord[0], cord[1]-1]);
-        const possible_neighbors = neighbors.filter(item=>
-            {
-                if(item[0]<0 || item[1]<0)
-                {
-                    return false
-                }
-                if(item[0]>(width/node_size.value)-1|| item[1]>(height/node_size.value)-1)
-                {
-                    return false
-                }
-                if((new Set(visited_nodes.map(JSON.stringify))).has(JSON.stringify(item)) && removeSetNeighbors!=false)
-                {
-                    return false
-                }
-                return true;
-            }
-        )
-        return possible_neighbors;
     }
     async function changeAlgorithm()//Async algo cuz im using delay to make it easier for user to see the cvhanges happen
     {
@@ -248,14 +146,119 @@
         visualize = false;
         running=false;
     }
-    function findArray(nestedArray, array)
+    function solve()
     {
-        const itemIndex = nestedArray.findIndex(subarray=>
+        //check for two points selected
+        if(selected_nodes.length<2)
+        {
+            console.log("select two points");
+            return
+        }
+        if(selectedSolvingAlgorithm.value=="astar")
+        {
+            Astar();
+        }
+        else if(selectedSolvingAlgorithm.value == "bfs")
+        {
+            BFS();
+        }
+        selected_nodes.length == 0;
+    }
+    function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
+    {
+        const row = Math.ceil(square_position/(width/node_size.value))-1;
+        const column =  square_position - ((Math.ceil(square_position/(width/node_size.value)) - 1)*(height/node_size.value))-1;
+        return { column, row };
+    }
+    function generate_grid(border)//Border determines whether walls are generated. if true yes otherwise nah
+    {
+        for(let y = 0; y<height/node_size.value; y++)
+        {
+            const row = {};
+            for(let x = 0; x<width/node_size.value; x++)
             {
-                return subarray.length ==  array.length && subarray.every((val, i)=>val===array[i])
+                row[x] =  {
+                    x:x,
+                    y:y,
+                    walls:{
+                        left:border,
+                        right:border, 
+                        top:border,
+                        bottom:border, 
+                    }
+                }
+            }
+            cell_container[y] = row
+        }
+    }
+    function delay(ms)//Delay function utilizing promise
+    {
+        return new Promise(resolve=>setTimeout(resolve, ms))
+    }
+    function cordString(coords)//Convert cord to string
+    {
+        return `${coords[0]},${coords[1]}`
+    };
+    function stringCord(string)//Same thing but string to cord now
+    {
+        return string.split(",").map(num=> parseInt(num, 10))
+    };
+    function compareNodes(node1, node2)//more efficient than stringCord for comparing nodes
+    {
+        return node1[0]==node2[0]&&node1[1]==node2[1]
+    };
+    function wall_check(a,b)//Checks two cords and return what walls to modify or check
+    {
+        if(a[0]===b[0])
+        {
+            return {
+                max:a[1] > b[1] ? a : b,
+                min:a[1] > b[1] ? b : a,
+                axis :  1
+            }
+        }
+        else if(a[1]===b[1])
+        {
+            return {
+                max:a[0] > b[0] ? a : b,
+                min:a[0] > b[0] ? b : a,
+                axis :  0
+            }
+        }
+    }
+    function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
+    {
+        const borderStyle = add!=true? "none":`${node_size.value/40}px solid #FFFFFF`;
+        const {max, min, axis} =  wall_check(a, b);
+        const axis_change = axis_reference[axis];
+        document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = borderStyle;
+        document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = borderStyle;
+        `${node_size.value/40}px; solid; #FFFFFF;`
+
+        cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
+        cell_container[min[0]][min[1]].walls[axis_change.minWall] = add;
+    }
+    function get_neighbors(cord)//Return neighbors of a given cord, could prob remove having to add two cords
+    {
+        const neighbors = []
+        neighbors.push([cord[0]-1, cord[1]]);
+        neighbors.push([cord[0]+1, cord[1]]);
+        neighbors.push([cord[0], cord[1]+1]);
+        neighbors.push([cord[0], cord[1]-1]);
+        const possible_neighbors = neighbors.filter(item=>
+            {
+                if(item[0]<0 || item[1]<0)
+                {
+                    return false
+                }
+                if(item[0]>(width/node_size.value)-1|| item[1]>(height/node_size.value)-1)
+                {
+                    return false
+                }
+                return true;
             }
         )
-        return itemIndex;
+        return possible_neighbors;
     }
     function findNearestSquare(event)//Finds the current square the user has clicked on
     {
@@ -264,12 +267,12 @@
         if(gridItem && selected_nodes.length < 2 && !selected_nodes.includes(node_point))
         {
             selected_nodes.push(node_point);
-            gridItem.style.background = "red"
+            gridItem.style.background = "red";
         }
         else if(selected_nodes.includes(node_point))
         {
             selected_nodes = selected_nodes.filter(x => x !== node_point);
-            gridItem.style.background = 'green'
+            gridItem.style.background = 'green';
         }
         console.log(selected_nodes)
     }
@@ -285,75 +288,103 @@
 //Methods
 
 
-//Maze creation
+//Maze creation 
+    function getRSetItem(set)//works for both map and set
+    {
+        const index =  Math.floor(Math.random()*set.size);
+        let i = 0;
+        for(const pair of set)
+        {
+            if(i===index){return pair};
+            i++;
+        }
+    }
     async function randomizedDFS()
     {
-        //get a random point first 
         const random_x = Math.floor(Math.random() * (width/node_size.value));
         const random_y = Math.floor(Math.random() * (height/node_size.value));
-        visited_nodes.push([random_x, random_y]);
-        let current_neighbor = [random_x, random_y];
-        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
+        const visited = new Set();
+        let current = [random_x, random_y];
+        visited.add(cordString(current));
+        while(visited.size<totalNodes)
         {
-            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
-            current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor, true);
-            new_neighbors.forEach(neighbor_item =>{
-                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
-            })
-            if(new_neighbors.length==0)//Improve this 
+            if(visualize){await delay(4)};
+            const newNeighbors =  get_neighbors(current);
+            for(let i = 0;i<newNeighbors.length;i++)
             {
-                current_neighbor = visited_nodes[Math.floor(Math.random()*visited_nodes.length)];
-                continue;
+                const serializedCord = cordString(newNeighbors[i])
+                if(visited.has(serializedCord)){newNeighbors.splice(i,1); continue;};
+                if(visualize){document.querySelector(`[data-coordinates="${serializedCord}"]`).style.background = "red"};
             }
-            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize){await delay(delayTime.value);}
-            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
-            new_neighbor_element.style.background = "green"
-            manipulate_walls(current_neighbor, new_neighbor, false);
-            current_neighbor =  new_neighbor;
-            visited_nodes.push(new_neighbor);
-
+            if(newNeighbors.length==0)
+            {
+                current = getRSetItem(visited);
+            }
+            const newNeighbor = newNeighbors[Math.floor(Math.random()*newNeighbors.length)];
+            if(visualize){document.querySelector(`[data-coordinates="${cordString(newNeighbor)}"]`).style.background = "green"}
+            manipulate_walls(current,newNeighbor, false);
+            current = newNeighbor;
+            visited.add(cordString(newNeighbor));
         }
-        console.log(cell_container)
-        document.querySelectorAll(".grid_item").forEach(element => {
-            element.style.background = "green"
-        });
-    }    
-    async function prim_generation()//Attempt 2
+        //repaint it. 
+    } 
+    function randNumb(min, max)
     {
-        console.log("starting prims")
-        const frontier_cells = [];
-        const random_x = Math.floor(Math.random() * (width/node_size.value));
-        const random_y = Math.floor(Math.random() * (height/node_size.value));
-        visited_nodes.push([random_x, random_y]);
-        let current_neighbor = [random_x, random_y];
-        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
-        {
-            await delay(1);
-            const new_neighbors =  get_neighbors(current_neighbor, true);
-            document.querySelector(`[data-coordinates="${cordString(current_neighbor)}"]`).style.background = "green"
-            new_neighbors.forEach(nNeighbor=>
-                {
-                    if(findArrayCubed(frontier_cells, nNeighbor)==-1)
-                    {
-                        frontier_cells.push([nNeighbor,current_neighbor]);
-                        document.querySelector(`[data-coordinates="${cordString(nNeighbor)}"]`).style.background = "red"
-                    }
-                }
-            )
-            const randomFIndex = Math.floor(Math.random()*frontier_cells.length);
-            const new_node = frontier_cells[randomFIndex]
-            const fCell =  new_node[0];
-            const adjSetCell =  new_node[1];
-            manipulate_walls(fCell, adjSetCell, false)
-            visited_nodes.push(fCell);
-            frontier_cells.splice(randomFIndex, 1);
-            current_neighbor = fCell;
-        }
-        console.log(cell_container);
+        return Math.floor(Math.random()*(max-min)+min);
     }
+    async function prim_generation()
+    {
+        const frontier =  new Map();
+        const visited = new Set();
+        const random_x = randNumb(0, (width/node_size.value));
+        const random_y = randNumb(0, (height/node_size.value));
+        let current = [random_x, random_y];
+        visited.add(cordString(current));
+        while(visited.size!=totalNodes)
+        {
+            if(visualize){await delay(4);document.querySelector(`[data-coordinates="${cordString(current)}"]`).style.background = "green";};
+            const newNeighbors = get_neighbors(current);
+            for(let i=0;i<newNeighbors.length;i++)
+            {
+                const serializedNeighbor = cordString(newNeighbors[i]);
+                if(visited.has(serializedNeighbor))
+                {
+                    continue;
+                }//combineable
+                if(!frontier.has(cordString(newNeighbors[i])))
+                {
+                    frontier.set(serializedNeighbor,current);
+                    if(visualize){document.querySelector(`[data-coordinates="${serializedNeighbor}"]`).style.background = "red";}
+                }
+            }
+            const randFrontNode = getRSetItem(frontier);
+            manipulate_walls(stringCord(randFrontNode[0]), randFrontNode[1]);
+            visited.add(randFrontNode[0]);
+            frontier.delete(randFrontNode[0]);
+            current = stringCord(randFrontNode[0]);
+        }
+    }
+    async function RBT2()
+    {
+        const random_x = randNumb(0, (width/node_size.value));
+        const random_y = randNumb(0, (height/node_size.value));
+        const visited = new Set();
+        let current = [random_x, random_y];
+        visited.add(cordString(current));
+        while(visited.size!=totalNodes)
+        {
+            if(visualize){await delay(4)}
+            const newNeighbors = get_neighbors(current_neighbor, true);
+            for(let i=0;i<newNeighbors.length;i++)
+            {
+                if(visited.has(cordString(newNeighbors[i])))
+                {
+                    continue;
+                }
+            }
+        }
+    }
+
     async function RBT()
     {
         const random_x = Math.floor(Math.random() * (width/node_size.value));
@@ -364,7 +395,7 @@
         while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
         {
             {await delay(delayTime.value);}
-            const new_neighbors =  get_neighbors(current_neighbor, true);
+            const new_neighbors =  get_neighbors(current_neighbor, true);//FIX THIS
             new_neighbors.forEach(neighbor_item =>{
                 document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
             })
@@ -392,101 +423,18 @@
             element.style.background = "green"
         });
     }
-    function RStartNode()
-    {
-        return [(Math.floor(Math.random() * (width/node_size.value))), (Math.floor(Math.random() * (height/node_size.value)))]
-    }
-    function combineSets(set, item)
-    {
-        return JSON.stringify(set).includes(JSON.stringify(item));
-    }
-    async function Kruskals()
-    {
-        const randomStart =  RStartNode();
-        let currentNode =  randomStart;
-        const mazeSet =  new Set();
-        while(mazeSet.size!=((width/node_size.value)*(height/node_size.value)))
-        {
-            const new_neighbors = get_neighbors(currentNode);
-            const rnIndex = Math.floor(Math.random()*new_neighbors.length);            
-            const randNeighbor = new_neighbors[rnIndex];
-            if(randNeighbor in mazeSet || currentNode in mazeSet)
-            {
-                combineSets()
-            }
-            if(true)
-            {
-                manipulate_walls(currentNode,new_neighbors[rnIndex], false);
-                //change the coloring
-            }
-            currentNode = RStartNode();//get a new starting node 
-        }
 
-    }
-    async function huntkill()
-    {
-        async function randomizedDFS()
-    {
-        //get a random point first 
-        const visitedNodes = []
-        let current_neighbor = RStartNode();
-        visitedNodes.push(RStartNode);
-        //Find original nodes neighbors. then continue on selecting a random node and getting that nodes neighbors 
-        while(visited_nodes.length!=((width/node_size.value)*(height/node_size.value)))
-        {
-            const current_neighbor_element =  document.querySelector(`[data-coordinates="${current_neighbor[0]},${current_neighbor[1]}"]`)
-            current_neighbor_element.style.background =  "green"
-            const new_neighbors =  get_neighbors(current_neighbor, true);
-            new_neighbors.forEach(neighbor_item =>{
-                document.querySelector(`[data-coordinates="${neighbor_item[0]},${neighbor_item[1]}"]`).style.background = "red"
-            })
-            if(new_neighbors.length==0)//Improve this 
-            {
-                current_neighbor;
-                //impelement new selection logic here
-
-                continue;
-            }
-            const new_neighbor =  new_neighbors[Math.floor(Math.random()*(new_neighbors.length))];
-            if(visualize){await delay(delayTime.value);}
-            const new_neighbor_element = document.querySelector(`[data-coordinates="${new_neighbor[0]},${new_neighbor[1]}"]`)
-            new_neighbor_element.style.background = "green"
-            manipulate_walls(current_neighbor, new_neighbor, false);
-            current_neighbor =  new_neighbor;
-            visited_nodes.push(new_neighbor);
-
-        }
-        console.log(cell_container)
-        document.querySelectorAll(".grid_item").forEach(element => {
-            element.style.background = "green"
-        });
-    }    
-        
-    }
-    function getRandNumb(max)
-    {
-        return Math.floor(Math.random()*max);
-    }
-    function GrowingTree()
-    {   
-        const currentNode =  RStartNode();
-        const visited = [];
-        while(visited.length!=((width/node_size.value)*(height/node_size.value)))
-        {
-
-        }
-    }
 //Maze creation
 
 
 
 
-//Maze solving
+//These works dont tweak
     function getMDIST(node1, node2)
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
     }
-    function wallWrapper(array, orig)
+    function wallWrapper(array, orig)//made this cuz im lazy
     {
         return array.filter(arr=>
             {
@@ -494,45 +442,6 @@
                 const axisInfo = axis_reference[axis];
                 const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];
                 return !wall
-            }
-        )
-    }
-    function BFS()
-    {
-        const startingNode =  stringCord(selected_nodes[0]);
-        const endingNode  = stringCord(selected_nodes[1]);
-        let currentNode;
-        const solution = [];
-        const frontier = [];
-        const visited = [];
-        let cost = 0;
-        frontier.push(startingNode);
-        visited.push(startingNode);
-        while(frontier.length!=0)
-        {
-            currentNode = frontier[0];
-            frontier.shift();
-            if(currentNode==endingNode)
-            {
-                solution.push(currentNode)
-                break;
-            }
-            solution.push(currentNode);
-            const nNeighbors =  wallWrapper(get_neighbors(currentNode, false),currentNode);
-            for(let i = 0; i<nNeighbors.length;i++)
-            {
-                document.querySelector(`[data-coordinates="${cordString(nNeighbors[i])}"]`).style.background =  "red"
-                if(findArray(visited, nNeighbors[i])==-1)
-                {
-                    frontier.push(nNeighbors[i]);
-                    visited.push(nNeighbors[i]);
-                }
-            }
-            cost+=1;
-        }
-        solution.forEach(coord=>
-            {
-                document.querySelector(`[data-coordinates="${cordString(coord)}"]`).style.background =  "blue"
             }
         )
     }
@@ -546,7 +455,13 @@
         {
             this.heap.push(i);
             let currentIndex =  this.heap.length-1;
-            while(this.parent(currentIndex).f>this.heap[currentIndex].f)
+            if(currentIndex==0)//if only one element in the list total just avoid the checks
+            {
+
+                return;
+            }
+            console.log(this.parent(currentIndex), this.heap[currentIndex].f)
+            while(this.parent(currentIndex)&&this.parent(currentIndex).f>this.heap[currentIndex].f)
             {
                 const parentIndex =  Math.floor((currentIndex-1)/2);
                 this.swap(currentIndex, parentIndex);
@@ -555,7 +470,7 @@
         }
         getRoot()
         {
-            if(this.heap.length ===0){return null}
+            if(this.heap.length===0){return null}
             this.swap(0,this.heap.length-1);//swap the nodes
             const root = this.heap.pop()
             this.heapify();//make sure nodes satisfy conditions where parent is less than children
@@ -569,11 +484,13 @@
                 let smallest = current;
                 const leftIndex =  2*current+1;
                 const rightIndex =  2*current+2;
-                if(leftIndex<this.heap.length&&this.heap[current].f>this.left(current).f&&this.left(current).f<this.right(current).f)
+    
+
+                if(this.left(current)&&this.heap[leftIndex].f < this.heap[smallest].f)
                 {
                     smallest = leftIndex;
                 }
-                if(rightIndex<this.heap.length&&this.heap[current].f>this.right(current).f&&this.right(current).f<this.left(current).f)
+                if(this.right(current)&&this.heap[rightIndex].f < this.heap[smallest].f)
                 {
                     smallest = rightIndex;
                 }
@@ -605,18 +522,22 @@
         {
             return this.heap[Math.floor((i-1)/2)]//round down to get to the parent node
         }
+        length()
+        {
+            return this.heap.length;
+        }
 
     }
-
-
     async function Astar()//implement Map here 
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
-        const closedList =  [];//Stores the already traversed nodes 
+        const closedList =  {};//Stores the already traversed nodes 
         const openList = [];//Queue based list lowest p =  first out
         const pQueue =  new BinaryHeap();
-        const visited = [];
+        //visited should be a set
+        const visited = new Set();
+    
         const testObj =
         {
             parent:null, 
@@ -625,67 +546,92 @@
             g:0,
             h:getMDIST(startingNode, endingNode)
         }
-        const solutionSet = [];
-        openList.push(testObj);
+        pQueue.heapadd(testObj)
         let currentNode;
-        while(openList.length>0)
+        while(pQueue.length()>0)
         {
-            await delay(10);
-            currentNode = openList[0];
+            currentNode = pQueue.getRoot();
             if(compareNodes(currentNode.coordinate, endingNode))
             {
                 let found = false;
-                //get the solution set here by backtracking 
-                const parentNode = currentNode.parent;
+                const solutionSet=[currentNode.parent]
+                let parentNode =  currentNode.parent
+                while(compareNodes(parentNode, startingNode)!=true)//backtracing
+                {
+                    solutionSet.push(closedList[parentNode].coordinate)
+                    document.querySelector(`[data-coordinates="${cordString(parentNode)}"]`).style.background =  "blue"
+                    parentNode = closedList[parentNode].parent;
+                }
                 return;
             }
-            console.log(currentNode.f)
-            document.querySelector(`[data-coordinates="${cordString(openList[0].coordinate)}"]`).style.background =  "purple"
-            const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate, false), currentNode.coordinate);
+            const newNeighbors = wallWrapper(get_neighbors(currentNode.coordinate), currentNode.coordinate);
             for(let i = 0; i<newNeighbors.length;i++)//use binary heap for this
             {
-                if(findArray(visited, newNeighbors[i])!= -1)
-                {
-                    continue;
-                }
+                if(visited.has(cordString(newNeighbors[i])))continue;
                 const h = getMDIST(endingNode, newNeighbors[i])
                 const g =  1+currentNode.g
                 const f =  h+g;
-                if(openList.length === 0 || openList[openList.length-1].f<=f)
-                {
-                    openList.push(
-                        {
-                            parent:currentNode.coordinate,
-                            coordinate:newNeighbors[i],
-                            f:f,
-                            g:g,
-                            h:h
-                        }
-                    )
-                }
-                else{                    
-                    for(let a = 0; a<openList.length;a++)
+                pQueue.heapadd(
                     {
-                        if(openList[a].f > f)
-                        {
-                            openList.splice(a, 0, 
-                                {
-                                    parent:currentNode.coordinate,
-                                    coordinate:newNeighbors[i],
-                                    f:f,
-                                    g:g,
-                                    h:h,
-                                }
-                            );
-                            break;
-                        }
+                        parent:currentNode.coordinate,
+                        coordinate:newNeighbors[i],
+                        f:f,
+                        g:g,
+                        h:h
                     }
-                }
-                visited.push(newNeighbors[i]);
+                )
+                visited.add(cordString(newNeighbors[i]));
             }
-            closedList.push(currentNode);//add to the closed set 
-            openList.shift();//remove from the pQueue
+            const serializedKey = cordString(currentNode.coordinate)
+            closedList[serializedKey] =  currentNode;
+            //add to the closed set, also make sure to place is in object order where the coordinate of it is serialized to make it easier to acess.
         }   
+    }
+    async function BFS()//add visualization mightahve bugs 
+    {
+        const endingNode  = stringCord(selected_nodes[1]);
+        const startingNode =  stringCord(selected_nodes[0]);
+        let currentNode = stringCord(selected_nodes[0]);
+        const visited =  new Map();
+        const queue = [currentNode];
+        console.log("BFS RUNNING")
+        visited.set(currentNode, null);//no pre existing parent node so just put null
+        while(queue.length > 0)
+        {
+            await delay(4);
+            currentNode = queue.shift();
+            if(cordString(currentNode)==cordString(endingNode))
+            {   
+                let bt = currentNode;
+                const solutionSet = [bt]
+                while(true)
+                {
+                    document.querySelector(`[data-coordinates="${cordString(bt)}"]`).style.background =  "blue";
+                    if(cordString(bt)==(cordString(startingNode)))
+                    {
+                        return;
+                    }
+                    bt = visited.get(cordString(bt));//gets the parent node of the currentNode
+                    solutionSet.push(bt);
+                }
+            }
+            const newNeighbors = wallWrapper(get_neighbors(currentNode), currentNode);
+            for(let i = 0; i<newNeighbors.length;i++)
+            {
+                if(!visited.has(cordString(newNeighbors[i])))
+                {
+                    document.querySelector(`[data-coordinates="${cordString(newNeighbors[i])}"]`).style.background =  "purple";
+                    queue.push(newNeighbors[i]);
+                    visited.set(cordString(newNeighbors[i]), currentNode);
+                }//dont add if its already been visited
+            }
+            //get the first element from the list and remove it 
+            //continue until it finds node
+        }
+    }
+    async function GBFS()//greedy best first search
+    {
+
     }
     //just optimize the code and remove clutter
     //maybe add one more algorithm if enough time

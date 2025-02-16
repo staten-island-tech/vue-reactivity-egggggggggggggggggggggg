@@ -9,7 +9,7 @@
         <div 
             v-for="n in (width/node_size) * (height/node_size)":key="n"
             class="grid_item"
-            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`${node_size/40}px solid #FFFFFF`}"
+            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`1px solid #FFFFFF`}"
             :data-coordinates="`${assign_cords(n).column},${assign_cords(n).row}`"
         >
 
@@ -54,6 +54,10 @@
     //using classes might fix idk tho
 
     import { ref, onMounted} from 'vue';
+    //pre-defined sizes:  20*20, 40*40, 80*80;
+    //use js to determine the vh and assign the node size and height. some options will be limited due to device size 
+
+    
     const width = 800;
     const height =  800;
     let node_size = ref(20);
@@ -67,6 +71,11 @@
     let visualize = false;
     const containerKey = ref(0);
     const delayTime = ref(1);//hqrd cap of 4ms set by the browser so anything below 4 is set to 4
+
+    const WindowWidth =  window.innerWidth;
+    const WindowHeight =  window.innerHeight;
+
+    console.log(WindowWidth, WindowHeight);
 
     const axis_reference = {
         0: 
@@ -87,8 +96,15 @@
     onMounted(()=>
     {
         generate_grid(true);
+        const start =  performance.now()
         prim_generation();
+        const end =  performance.now()
+        console.log(`took ${end-start} ms`);
     })
+
+    
+
+
 //Methods
     function handleChange()
     {
@@ -318,6 +334,7 @@
     async function prim_generation()//Attempt 2
     {
         console.log("starting prims")
+        
         const frontier_cells = [];//replace with set
         const random_x = Math.floor(Math.random() * (width/node_size.value));
         const random_y = Math.floor(Math.random() * (height/node_size.value));//limit the visitedNodes set to here;

@@ -6,8 +6,7 @@
 </template>
 
 <script setup>
-  import SecondMaze from './components/SecondMaze.vue';
-import TheBackup from './components/TheBackup.vue';
+  import TheBackup from './components/TheBackup.vue';
   
 </script>
 
