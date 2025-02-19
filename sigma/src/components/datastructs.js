@@ -1,4 +1,4 @@
-export default class BinaryHeap
+export class BinaryHeap
 {
     constructor()
     {

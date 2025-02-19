@@ -7,7 +7,6 @@
 
 <script setup>
   import BackupTwo from './components/BackupTwo.vue';
-import TheBackup from './components/TheBackup.vue';
   
 </script>
 

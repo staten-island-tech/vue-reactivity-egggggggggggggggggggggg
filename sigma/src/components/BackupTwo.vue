@@ -65,32 +65,28 @@
     </div>
 </template>
 <script setup>  
+    import { ref, reactive, onMounted} from 'vue';    //use js to determine the vh and assign the node size and height. some options will be limited due to device size 
+    import { delay, stringCord, cordString, compareNodes, wall_check, randNumb, getRSetItem, getMDIST } from './mazeutils'
+    import { BinaryHeap } from './datastructs'
     
-
-
-
-    //problems
-    //recalculation of elements when form submission despite @submit.prevent
-    //using classes might fix idk tho
-
-    import { ref, reactive, onMounted} from 'vue';
-    //pre-defined sizes:  20*20, 40*40, 80*80;
-    //use js to determine the vh and assign the node size and height. some options will be limited due to device size 
-
-
     //to do list
-    //leverage reactive() by creating something with all of the styles properties such as border background etc
-    //change those values? 
-    //something function or smth idk 
-    
+    //break apart the stuff into files
+    //move the util functions that aren't linked to global variables to another file
+    //try and remove some of the global variables
+    //break the options bar thingie into a new component 
+    //work on the styles of the css a bit maybe
+    //try and make it compatible with other devices by looking at user vh and limiting the node_sizes based off of thjat
+    //clean up some of the code 
+    //look for optimizations
+
     const width = 800;
     const height =  800;
-    let node_size = ref(40);
+    let node_size = ref(10);
     let running=false;
     let cell_container = reactive({}); //FIX THIS
     let selected_nodes = [];
     const selectedDifficulty =  ref("Medium");
-    const selectedAlgorithm =  ref("back_recursive");
+    const selectedAlgorithm =  ref("prims");
     const selectedSolvingAlgorithm =  ref("astar")
     let visualize = false;
     const containerKey = ref(0);
@@ -128,25 +124,7 @@
 
     
     generate_grid(`1px solid #FFFFFF`);
-    function getStyles(n)
-    {
-        const { column, row} =  assign_cords(n);
-        const cell = cell_container[column][row];        
-        return  {
-                width:`${node_size}px`,
-                height:`${node_size}px`,
-                borderLeft:`${cell.walls.left}`,
-                borderRight:`${cell.walls.right}`,
-                borderTop:`${cell.walls.top}`,
-                borderBottom:`${cell.walls.bottom}`,
-                background:`${cell.background}`
-                }
-    }
 //Methods
-    function handleChange()
-    {
-
-    }
     async function changeAlgorithm()//Async algo cuz im using delay to make it easier for user to see the cvhanges happen
     {
 
@@ -211,12 +189,6 @@
             }
         )
     }
-    function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
-    {
-        const row = Math.ceil(square_position/(width/node_size.value))-1;
-        const column =  square_position - ((Math.ceil(square_position/(width/node_size.value)) - 1)*(height/node_size.value))-1;
-        return { column, row };
-    }
     function generate_grid(border)//Border determines whether walls are generated. if true yes otherwise nah
     {
         for(let y = 0; y<height/node_size.value; y++)
@@ -246,41 +218,6 @@
         const axis_change = axis_reference[axis];
         cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  borderStyle;
         cell_container[min[0]][min[1]].walls[axis_change.minWall] = borderStyle;
-    }
-    function delay(ms)//Delay function utilizing promise
-    {
-        return new Promise(resolve=>setTimeout(resolve, ms))
-    }
-    function cordString(coords)//Convert cord to string
-    {
-        return `${coords[0]},${coords[1]}`
-    };
-    function stringCord(string)//Same thing but string to cord now
-    {
-        return string.split(",").map(num=> parseInt(num, 10))
-    };
-    function compareNodes(node1, node2)//more efficient than stringCord for comparing nodes
-    {
-        return node1[0]==node2[0]&&node1[1]==node2[1]
-    };
-    function wall_check(a,b)//Checks two cords and return what walls to modify or check
-    {
-        if(a[0]===b[0])
-        {
-            return {
-                max:a[1] > b[1] ? a : b,
-                min:a[1] > b[1] ? b : a,
-                axis :  1
-            }
-        }
-        else if(a[1]===b[1])
-        {
-            return {
-                max:a[0] > b[0] ? a : b,
-                min:a[0] > b[0] ? b : a,
-                axis :  0
-            }
-        }
     }
     function get_neighbors(cord)//Return neighbors of a given cord, could prob remove having to add two cords
     {
@@ -320,20 +257,7 @@
         }
         console.log(selected_nodes)
     }
-//Methods
-
-
-//Maze creation 
-    function getRSetItem(set)//works for both map and set
-    {
-        const index =  Math.floor(Math.random()*set.size);
-        let i = 0;
-        for(const pair of set)
-        {
-            if(i===index){return pair};
-            i++;
-        }
-    }
+    
     async function randomizedDFS()
     {
         const random_x = Math.floor(Math.random() * (width/node_size.value));
@@ -363,10 +287,6 @@
         }
         //repaint it. 
     } 
-    function randNumb(min, max)
-    {
-        return Math.floor(Math.random()*(max-min)+min);
-    }
     async function prim_generation()
     {
         const frontier =  new Map();
@@ -416,7 +336,7 @@
         visited.add(cordString(current));
         while(visited.size!=totalNodes)
         {
-            if(visualize){await delay(4)}
+            if(visualize){await delay(1)}
             const newNeighbors = get_neighbors(current, true).filter(item=>
             {
             if(visited.has(cordString(item))){
@@ -449,99 +369,12 @@
 
 
 //These works dont tweak
-    function getMDIST(node1, node2)
-    {
-        return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
-    }
-    class BinaryHeap//modify this to hold objects via their f value
-    {
-        constructor()
-        {
-            this.heap = []
-        }
-        heapadd(i)
-        {
-            this.heap.push(i);
-            let currentIndex =  this.heap.length-1;
-            if(currentIndex==0)//if only one element in the list total just avoid the checks
-            {
 
-                return;
-            }
-            console.log(this.parent(currentIndex), this.heap[currentIndex].f)
-            while(this.parent(currentIndex)&&this.parent(currentIndex).f>this.heap[currentIndex].f)
-            {
-                const parentIndex =  Math.floor((currentIndex-1)/2);
-                this.swap(currentIndex, parentIndex);
-                currentIndex =  parentIndex;
-            }
-        }
-        getRoot()
-        {
-            if(this.heap.length===0){return null}
-            this.swap(0,this.heap.length-1);//swap the nodes
-            const root = this.heap.pop()
-            this.heapify();//make sure nodes satisfy conditions where parent is less than children
-            return root;//pops the last element(root node) and returns it afterwards
-        }
-        heapify()
-        {
-            let current = 0;
-            while(true)
-            {
-                let smallest = current;
-                const leftIndex =  2*current+1;
-                const rightIndex =  2*current+2;
-    
-
-                if(this.left(current)&&this.heap[leftIndex].f < this.heap[smallest].f)
-                {
-                    smallest = leftIndex;
-                }
-                if(this.right(current)&&this.heap[rightIndex].f < this.heap[smallest].f)
-                {
-                    smallest = rightIndex;
-                }
-                if(smallest!==current)
-                {
-                    this.swap(current, smallest);
-                    current=smallest;
-                }
-                else
-                {
-                    break;
-                }
-
-            }
-        }
-        swap(a,b)
-        {
-            [this.heap[a], this.heap[b]] =  [this.heap[b], this.heap[a]];
-        }
-        left(i)//parent node input
-        {
-            return this.heap[2*i+1];
-        }
-        right(i)//parent node input
-        {
-            return this.heap[2*i+2];
-        }
-        parent(i)//child node input
-        {
-            return this.heap[Math.floor((i-1)/2)]//round down to get to the parent node
-        }
-        length()
-        {
-            return this.heap.length;
-        }
-
-    }
     async function Astar()//implement Map here 
     {
         const startingNode = stringCord(selected_nodes[0]);
         const endingNode =  stringCord(selected_nodes[1]);
         const closedList =  {};//Stores the already traversed nodes 
-        const openList = [];//Queue based list lowest p =  first out
         const pQueue =  new BinaryHeap();
         //visited should be a set
         const visited = new Set();
@@ -561,9 +394,8 @@
             currentNode = pQueue.getRoot();
             if(compareNodes(currentNode.coordinate, endingNode))
             {
-                let found = false;
                 const solutionSet=[currentNode.parent]
-                let parentNode =  currentNode.parent
+                let parentNode =  currentNode.parent;
                 while(compareNodes(parentNode, startingNode)!=true)//backtracing
                 {
                     solutionSet.push(closedList[parentNode].coordinate)
@@ -588,6 +420,7 @@
                         h:h
                     }
                 )
+                    cell_container[newNeighbors[i][0]][newNeighbors[i][1]].background="red";
                 visited.add(cordString(newNeighbors[i]));
             }
             const serializedKey = cordString(currentNode.coordinate)
@@ -628,7 +461,7 @@
             {
                 if(!visited.has(cordString(newNeighbors[i])))
                 {
-                    cell_container[cell_container[i][0]][cell_container[i]].background =  "purple";
+                    cell_container[newNeighbors[i][0]][newNeighbors[i][1]].background =  "purple";
                     queue.push(newNeighbors[i]);
                     visited.set(cordString(newNeighbors[i]), currentNode);
                 }//dont add if its already been visited
