@@ -2,33 +2,17 @@
     <div class="functional_container">
     <div class="maze_container" :key="containerKey"
     :style="{
-        display:`grid`,
         gridTemplateRows:  `repeat(${width/node_size},${node_size}px)`,
         gridTemplateColumns: `repeat(${height/node_size},${node_size}px)`
     }" 
     @click="findNearestSquare">
-        <div
-            v-for="(valueY, keyY) in cell_container"
-            :key="keyY"
-            class="row"
+        <div 
+            v-for="n in (width/node_size) * (height/node_size)":key="n"
+            class="grid_item"
+            :style="{width:`${node_size}px`,height:`${node_size}px`,border:`1px solid #FFFFFF`}"
+            :data-coordinates="`${assign_cords(n).column},${assign_cords(n).row}`"
         >
-            <div
-                v-for="(valueX, keyX) in valueY"
-                :key="keyX"
-                class="grid_item"
-                :style="
-                {
-                    width:`${node_size}px`,
-                    height:`${node_size}px`,
-                    borderLeft:`${valueX.walls.left}`,
-                    borderRight:`${valueX.walls.right}`,
-                    borderTop:`${valueX.walls.top}`,
-                    borderBottom:`${valueX.walls.bottom}`,
-                    background:`${valueX.background}`
-                }"
-                :data-coordinates="`${keyY},${keyX}`"
-            >
-            </div>
+
         </div>
     </div>
     <div class="options_menu"> 
@@ -65,15 +49,11 @@
     </div>
 </template>
 <script setup>  
-    
-
-
-
     //problems
     //recalculation of elements when form submission despite @submit.prevent
     //using classes might fix idk tho
 
-    import { ref, reactive, onMounted} from 'vue';
+    import { ref, onMounted} from 'vue';
     //pre-defined sizes:  20*20, 40*40, 80*80;
     //use js to determine the vh and assign the node size and height. some options will be limited due to device size 
 
@@ -85,10 +65,11 @@
     
     const width = 800;
     const height =  800;
-    let node_size = ref(40);
+    let node_size = ref(10);
     let running=false;
-    let cell_container = reactive({}); //FIX THIS
+    let cell_container = {}; //FIX THIS
     let selected_nodes = [];
+    let visited_nodes = [];
     const selectedDifficulty =  ref("Medium");
     const selectedAlgorithm =  ref("back_recursive");
     const selectedSolvingAlgorithm =  ref("astar")
@@ -117,31 +98,18 @@
             minStyle:"borderBottom",
         }
     }
-    
     onMounted(()=>
     {
         const start =  performance.now();
-        prim_generation();
+        generate_grid(true);
+        RBT();
         const end = performance.now();
         console.log(`took ${end-start} ms`)
     })
 
     
-    generate_grid(`1px solid #FFFFFF`);
-    function getStyles(n)
-    {
-        const { column, row} =  assign_cords(n);
-        const cell = cell_container[column][row];        
-        return  {
-                width:`${node_size}px`,
-                height:`${node_size}px`,
-                borderLeft:`${cell.walls.left}`,
-                borderRight:`${cell.walls.right}`,
-                borderTop:`${cell.walls.top}`,
-                borderBottom:`${cell.walls.bottom}`,
-                background:`${cell.background}`
-                }
-    }
+
+
 //Methods
     function handleChange()
     {
@@ -173,12 +141,12 @@
         if(running==true){return};
         running=true;
         containerKey.value+=1;
+        visited_nodes.length = 0;
         selected_nodes = [];
         visualize = true
-        Object.keys(cell_container).forEach(row => delete cell_container[row]);
-        generate_grid(`1px solid #FFFFFF`);
+        cell_container = {};
+        generate_grid(true)
         await changeAlgorithm();
-        containerKey.value+=1;
         visualize = false;
         running=false;
     }
@@ -199,17 +167,6 @@
             BFS();
         }
         selected_nodes.length == 0;
-    }
-    function wallWrapper(array, orig)//made this cuz im lazy
-    {
-        return array.filter(arr=>
-            {
-                const {max,min,axis} =  wall_check(arr, orig)
-                const axisInfo = axis_reference[axis];
-                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall]=="none"?true:false;//FIX THIS
-                return wall;
-            }
-        )
     }
     function assign_cords(square_position)//Function called by html to get current grid position and assign to dataset
     {
@@ -232,20 +189,11 @@
                         right:border, 
                         top:border,
                         bottom:border, 
-                    },
-                    background:"black"
+                    }
                 }
             }
             cell_container[y] = row
         }
-    }
-    function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
-    {
-        const borderStyle = add!=true? "none":`${node_size.value/40}px solid #FFFFFF`;
-        const {max, min, axis} =  wall_check(a, b);
-        const axis_change = axis_reference[axis];
-        cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  borderStyle;
-        cell_container[min[0]][min[1]].walls[axis_change.minWall] = borderStyle;
     }
     function delay(ms)//Delay function utilizing promise
     {
@@ -281,6 +229,18 @@
                 axis :  0
             }
         }
+    }
+    function manipulate_walls(a, b, add) //add condition specifies whether to add or remove walls
+    {
+        const borderStyle = add!=true? "none":`${node_size.value/40}px solid #FFFFFF`;
+        const {max, min, axis} =  wall_check(a, b);
+        const axis_change = axis_reference[axis];
+        document.querySelector(`[data-coordinates="${cordString(max)}"]`).style[axis_change.maxStyle] = borderStyle;
+        document.querySelector(`[data-coordinates="${cordString(min)}"]`).style[axis_change.minStyle] = borderStyle;
+        `${node_size.value/40}px; solid; #FFFFFF;`
+
+        cell_container[max[0]][max[1]].walls[axis_change.maxWall] =  add;
+        cell_container[min[0]][min[1]].walls[axis_change.minWall] = add;
     }
     function get_neighbors(cord)//Return neighbors of a given cord, could prob remove having to add two cords
     {
@@ -349,14 +309,14 @@
             {
                 const serializedCord = cordString(newNeighbors[i])
                 if(visited.has(serializedCord)){newNeighbors.splice(i,1); continue;};
-                if(visualize){cell_container[newNeighbor[i][0]][newNeighbor[i][1]].background = "red"};
+                if(visualize){document.querySelector(`[data-coordinates="${serializedCord}"]`).style.background = "red"};
             }
             if(newNeighbors.length==0)
             {
                 current = getRSetItem(visited);
             }
             const newNeighbor = newNeighbors[Math.floor(Math.random()*newNeighbors.length)];
-            if(visualize){cell_container[newNeighbor[0]][newNeighbor[1]].background = "green"}
+            if(visualize){document.querySelector(`[data-coordinates="${cordString(newNeighbor)}"]`).style.background = "green"}
             manipulate_walls(current,newNeighbor, false);
             current = newNeighbor;
             visited.add(cordString(newNeighbor));
@@ -377,10 +337,7 @@
         visited.add(cordString(current));
         while(visited.size!=totalNodes)
         {
-            if(visualize){
-                await delay(4); 
-                cell_container[current[0]][current[1]].background = "green"
-            };
+            if(visualize){await delay(4);document.querySelector(`[data-coordinates="${cordString(current)}"]`).style.background = "green";};
             const newNeighbors = get_neighbors(current);
             for(let i=0;i<newNeighbors.length;i++)
             {
@@ -392,19 +349,15 @@
                 if(!frontier.has(cordString(newNeighbors[i])))
                 {
                     frontier.set(serializedNeighbor,current);
-                    if(visualize)
-                    {
-                        cell_container[newNeighbors[i][0]][newNeighbors[i][1]].background = "red"
-                    }
+                    if(visualize){document.querySelector(`[data-coordinates="${serializedNeighbor}"]`).style.background = "red";}
                 }
             }
             const randFrontNode = getRSetItem(frontier);
-            manipulate_walls(stringCord(randFrontNode[0]), randFrontNode[1], false);
+            manipulate_walls(stringCord(randFrontNode[0]), randFrontNode[1]);
             visited.add(randFrontNode[0]);
             frontier.delete(randFrontNode[0]);
             current = stringCord(randFrontNode[0]);
         }
-        console.log(cell_container)
     }
     async function RBT()
     {
@@ -422,15 +375,14 @@
             if(visited.has(cordString(item))){
                 return false
             }
-            if(visualize){
-                cell_container[item[0]][item[1]].background = "red"}
+            if(visualize){document.querySelector(`[data-coordinates="${cordString(item)}"]`).style.background = "red"}
             return true;
             }
             );
             if(newNeighbors.length>0)
             {
                 const newNeighbor =  newNeighbors[randNumb(0, newNeighbors.length)];
-                manipulate_walls(current, newNeighbor, false);
+                manipulate_walls(current, newNeighbor);
                 current = newNeighbor;
                 visited.add(cordString(newNeighbor));
                 stack.push(newNeighbor);
@@ -438,7 +390,7 @@
             else
             {
                 current =  stack.at(-1)
-                if(visualize){cell_container[current[0]][current[1]].background = "orange";}
+                if(visualize){document.querySelector(`[data-coordinates="${cordString(current)}"]`).style.background = "orange";}
                 stack.pop();
             }
         }
@@ -452,6 +404,17 @@
     function getMDIST(node1, node2)
     {
         return Math.abs(node1[0]-node2[0])+Math.abs(node1[1]-[node2[1]])
+    }
+    function wallWrapper(array, orig)//made this cuz im lazy
+    {
+        return array.filter(arr=>
+            {
+                const {max,min,axis} =  wall_check(arr, orig)
+                const axisInfo = axis_reference[axis];
+                const wall = cell_container[max[0]][max[1]].walls[axisInfo.maxWall];//FIX THIS
+                return !wall
+            }
+        )
     }
     class BinaryHeap//modify this to hold objects via their f value
     {
@@ -567,7 +530,7 @@
                 while(compareNodes(parentNode, startingNode)!=true)//backtracing
                 {
                     solutionSet.push(closedList[parentNode].coordinate)
-                    cell_container[parentNode[0]][parentNode[1]].background =  "blue"
+                    document.querySelector(`[data-coordinates="${cordString(parentNode)}"]`).style.background =  "blue"
                     parentNode = closedList[parentNode].parent;
                 }
                 return;
@@ -614,7 +577,7 @@
                 const solutionSet = [bt]
                 while(true)
                 {
-                    cell_container[bt[0]][bt[1]].background =  "blue";
+                    document.querySelector(`[data-coordinates="${cordString(bt)}"]`).style.background =  "blue";
                     if(cordString(bt)==(cordString(startingNode)))
                     {
                         return;
@@ -628,7 +591,7 @@
             {
                 if(!visited.has(cordString(newNeighbors[i])))
                 {
-                    cell_container[cell_container[i][0]][cell_container[i]].background =  "purple";
+                    document.querySelector(`[data-coordinates="${cordString(newNeighbors[i])}"]`).style.background =  "purple";
                     queue.push(newNeighbors[i]);
                     visited.set(cordString(newNeighbors[i]), currentNode);
                 }//dont add if its already been visited
