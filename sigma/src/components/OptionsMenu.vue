@@ -41,7 +41,7 @@
     import { ref, watch } from 'vue';
     const emit  = defineEmits(['regenerate', 'solve', 'clearChanges', 'stopGeneration', 'update:settings']);
 
-    const node_size = ref(40);
+    const node_size = ref(10);
     const selectedAlgorithm = ref("prims");
     const selectedSolvingAlgorithm =  ref("astar");
     const delayTime =  ref(10);

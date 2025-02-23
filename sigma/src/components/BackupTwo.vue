@@ -31,6 +31,7 @@
             </div>
         </div>
     </div>
+    <div class="right_panel">
     <OptionsMenu
     @regenerate="Regenerate" @solve="solve" @clearChanges="clearChanges" @stopGeneration="stopGeneration" @update:settings="updateSettings"
     ></OptionsMenu>
@@ -39,7 +40,7 @@
         <div>Maze Generation Time : {{ mazeGenerationTime }} ms</div>
         <div>Maze Solving Time: {{ mazeSolvingTime }} ms</div>
     </div>
-
+    </div>
 
 
     </div>
@@ -59,7 +60,7 @@
 
     let width = 800;
     let height =  800;
-    let node_size = ref(40);
+    let node_size = ref(10);
     let running=false;
     let visualize = ref(false);
     let cell_container = reactive({}); 
@@ -73,7 +74,7 @@
     const WindowWidth =  window.innerWidth;
     const WindowHeight =  window.innerHeight;
     const mazeGenerationTime=ref(0);
-    const mazeSolvingTime =  ref(0);
+    const mazeSolvingTime = ref(0);
     console.log(WindowWidth, WindowHeight);
 
     function updateSettings(newSettings)
@@ -84,7 +85,8 @@
         delayTime.value = newSettings.delayTime;
         visualize.value =  newSettings.visualize;
         generate_grid(`1px solid #FFFFFF`);
-        
+        console.log("updated settings");
+        containerKey.value+=1;
     }
     //formula for delay bypass =  n/4ms = x; 
     //n =  how many loopiterations has occured
@@ -122,6 +124,9 @@
         width = 800;
         height = 800;
     }
+
+
+
 
 
 
@@ -172,10 +177,12 @@
         if(selectedAlgorithm.value == "prims")
         {
             await prim_generation();
+            return 
         }
         else if(selectedAlgorithm.value == "back_recursive")
         {
             await RBT();
+            return
         }
     }
     async function Regenerate()
@@ -183,9 +190,10 @@
         if(running==true){return};
         running=true;
         selected_nodes = [];
-        visualize.value = true
+        visualize.value = true;
         generate_grid(`1px solid #FFFFFF`);
         await changeAlgorithm();
+        visualize.value=false;
         running=false;
     }
     function solve()
@@ -255,9 +263,9 @@
         neighbors.push([cord[0], cord[1]-1]);
         const possible_neighbors = neighbors.filter(item=>
             {
-                if(item[0]<0 || item[1]<0)
-                {
-                    return false
+                 if(item[0]<0 || item[1]<0)
+                 {
+                     return false
                 }
                 if(item[0]>(width/node_size.value)-1|| item[1]>(height/node_size.value)-1)
                 {
@@ -298,7 +306,7 @@
         let current = [random_x, random_y];
         visited.add(cordString(current));
         let loopCounter = 0;
-        while(visited.size!=totalNodes)
+        while(visited.size!=totalNodes-1)
         {
             if(visualize.value){
                 if(loopCounter%100==0)
@@ -312,6 +320,10 @@
                 return;
             }
             const newNeighbors = get_neighbors(current);
+            if(newNeighbors.length==0)
+            {
+                return;
+            }
             for(let i=0;i<newNeighbors.length;i++)
             {
                 const serializedNeighbor = cordString(newNeighbors[i]);
@@ -327,6 +339,10 @@
                         cell_container[newNeighbors[i][0]][newNeighbors[i][1]].background = "red"
                     }
                 }
+            }
+            if(frontier.size == 0)
+            {
+                return
             }
             const randFrontNode = getRSetItem(frontier);
             manipulate_walls(stringCord(randFrontNode[0]), randFrontNode[1], false);
@@ -351,7 +367,7 @@
             loopIterations+=1;
             
             if(visualize.value){
-                if(loopIterations%100==0)
+                if(loopIterations%20==0)
                 {
                     await delay(delayTime.value);
                 }
@@ -367,7 +383,8 @@
                     return false;
                 }
                 if(visualize.value){
-                    cell_container[item[0]][item[1]].background = "red"}
+                    cell_container[item[0]][item[1]].background = "red"
+                }
                 return true;
                 }
             );
@@ -501,17 +518,6 @@
         display:grid;
         background: black;
     }
-    .options_menu {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: #2c2f33;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    width: 250px;
-    color: white;
-    }
     .functional_container
     {
         display:flex;
@@ -528,42 +534,20 @@
         text-align: center;
         
     }
-
-
-    .options_menu form {
-        display: flex;
+    @media screen and (max-width:768px)
+    {
+        .functional_container
+        {
+            display:flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+    .right_panel
+    {
+        display:flex;
+        gap:20px;
         flex-direction: column;
-        gap: 5px;
-    }
-
-    button {
-        background: #5865F2;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background 0.2s ease-in-out;
-    }
-
-    button:hover {
-        background: #4752c4;
-    }
-
-    select, input {
-        padding: 6px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        background: #23272a;
-        color: white;
-    }
-
-    select:focus, input:focus {
-        outline: none;
-        border-color: #7289DA;
-    }
-
-    input {
-        text-align: center;
     }
 </style>
