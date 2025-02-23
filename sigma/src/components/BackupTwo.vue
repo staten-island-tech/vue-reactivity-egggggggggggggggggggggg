@@ -11,6 +11,7 @@
             v-for="(valueY, keyY) in cell_container"
             :key="keyY"
             class="row"
+            :data-test="keyY"
         >
             <div
                 v-for="(valueX, keyX) in valueY"
@@ -40,10 +41,6 @@
         <div>Maze Generation Time : {{ mazeGenerationTime }} ms</div>
         <div>Maze Solving Time: {{ mazeSolvingTime }} ms</div>
     </div>
-    </div>
-    <div>
-        {{ WindowHeight }}
-        {{ WindowWidth }}
     </div>
 
     </div>
@@ -88,16 +85,18 @@
 
     function updateSettings(newSettings)
     {   
-        node_size.value =  newSettings.node_size;
+        if(node_size.value!=Number(newSettings.node_size))
+        {
+            node_size.value =  Number(newSettings.node_size);
+            cell_container=reactive({});
+            generate_grid('1px solid #FFFFFF')
+        }
         selectedAlgorithm.value =  newSettings.selectedAlgorithm;
         selectedSolvingAlgorithm.value = newSettings.selectedSolvingAlgorithm;
         delayTime.value = newSettings.delayTime;
         visualize.value =  newSettings.visualize;
-        if(node_size.value!=newSettings.node_size)
-        {
-            //idk how to
-            containerKey+=1;
-        }
+        containerKey.value+=1;
+        console.log(newSettings)
     }
     //formula for delay bypass =  n/4ms = x; 
     //n =  how many loopiterations has occured
@@ -371,7 +370,7 @@
                     {
                         await delay(10);
                     }    
-                cell_container[current[0]][current[1]].background="orange";
+                cell_container[current[0]][current[1]].background="black";
             }
             if(terminate==true)
             {
@@ -400,7 +399,7 @@
             {
                 if(stack.length==0)return;
                 current =  stack.at(-1)
-                if(visualize.value){cell_container[current[0]][current[1]].background = "black";}
+                if(visualize.value){cell_container[current[0]][current[1]].background = "blue";}
                 stack.pop();
             }
         }
