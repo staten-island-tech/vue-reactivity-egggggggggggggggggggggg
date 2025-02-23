@@ -26,13 +26,14 @@
                 <option value="bfs">Breadth-First-Search</option>
             </select>
         </form>
-        <form>
+        
+        <form class="placeholderclass">
             <input type="number" min="10" max="1000" step="10" v-model="delayTime">
-            <label clas="toggle">
+            <div clas="toggle">
                 Visualize
-                <input type="checkbox" v-model="visualize" @change="updateSettings">
+                <input class="checkmark" type="checkbox" v-model="visualize" @change="updateSettings">
                 <span class="slider"></span>
-            </label>
+            </div>
         </form>
     </div>
 </template>
@@ -140,5 +141,9 @@
 
     input {
         text-align: center;
+    }
+    .placeholderclass
+    {
+        align-items: center;
     }
 </style>

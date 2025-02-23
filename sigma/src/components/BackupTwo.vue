@@ -41,7 +41,10 @@
         <div>Maze Solving Time: {{ mazeSolvingTime }} ms</div>
     </div>
     </div>
-
+    <div>
+        {{ WindowHeight }}
+        {{ WindowWidth }}
+    </div>
 
     </div>
 </template>
@@ -58,9 +61,15 @@
     //try and make it compatible with other devices by looking at user vh and limiting the node_sizes based off of thjat
     //look for optimizations
 
-    let width = 800;
-    let height =  800;
+    let width = 400;
+    let height =  400;
+    
+    //too lazy to tweak the existing code
+
+
     let node_size = ref(10);
+
+
     let running=false;
     let visualize = ref(false);
     let cell_container = reactive({}); 
@@ -71,8 +80,8 @@
     const containerKey = ref(0);
     const delayTime = ref(10);
     const totalNodes =  ((width/node_size.value)*(height/node_size.value));
-    const WindowWidth =  window.innerWidth;
-    const WindowHeight =  window.innerHeight;
+    const WindowWidth =  ref(window.innerWidth);
+    const WindowHeight =  ref(window.innerHeight);
     const mazeGenerationTime=ref(0);
     const mazeSolvingTime = ref(0);
     console.log(WindowWidth, WindowHeight);
@@ -84,9 +93,11 @@
         selectedSolvingAlgorithm.value = newSettings.selectedSolvingAlgorithm;
         delayTime.value = newSettings.delayTime;
         visualize.value =  newSettings.visualize;
-        generate_grid(`1px solid #FFFFFF`);
-        console.log("updated settings");
-        containerKey.value+=1;
+        if(node_size.value!=newSettings.node_size)
+        {
+            //idk how to
+            containerKey+=1;
+        }
     }
     //formula for delay bypass =  n/4ms = x; 
     //n =  how many loopiterations has occured
@@ -108,22 +119,7 @@
     //     }
     // }
     //prototype code
-    
-    if(WindowHeight<500 || WindowWidth<500)
-    {
-        width = 400;
-        height= 400;
-    }
-    else if(WindowHeight||WindowWidth)
-    {
-        width = 600;
-        height = 600;
-    }
-    else if(WindowHeight||WindowWidth)
-    {
-        width = 800;
-        height = 800;
-    }
+
 
 
 
@@ -140,11 +136,17 @@
             }
         }
         selected_nodes = [];
+        generate_grid('1px solid #FFFFFF')
+        containerKey.value+=1;
+        console.log("finished resetting")
     }
-    function stopGeneration()
+    async function stopGeneration()
     {
         terminate=true;
-    }
+        clearChanges();
+        await delay(10);
+        terminate=false;
+    }//terminate falg 
     const axis_reference = {
         0: 
         {
@@ -190,10 +192,8 @@
         if(running==true){return};
         running=true;
         selected_nodes = [];
-        visualize.value = true;
         generate_grid(`1px solid #FFFFFF`);
         await changeAlgorithm();
-        visualize.value=false;
         running=false;
     }
     function solve()
@@ -309,9 +309,10 @@
         while(visited.size!=totalNodes-1)
         {
             if(visualize.value){
-                if(loopCounter%100==0)
+                //calculate the value here
+                if(loopCounter%delayTime.value==0)
                 {
-                    await delay(delayTime.value); 
+                    await delay(10); 
                 }
                 cell_container[current[0]][current[1]].background = "black"
             };
@@ -365,13 +366,12 @@
         while(visited.size!=totalNodes)
         {
             loopIterations+=1;
-            
             if(visualize.value){
-                if(loopIterations%20==0)
-                {
-                    await delay(delayTime.value);
-                }
-                cell_container[current[0]][current[1]].background="black";
+                if(loopIterations%delayTime.value==0)
+                    {
+                        await delay(10);
+                    }    
+                cell_container[current[0]][current[1]].background="orange";
             }
             if(terminate==true)
             {
@@ -398,8 +398,9 @@
             }
             else
             {
+                if(stack.length==0)return;
                 current =  stack.at(-1)
-                if(visualize.value){cell_container[current[0]][current[1]].background = "orange";}
+                if(visualize.value){cell_container[current[0]][current[1]].background = "black";}
                 stack.pop();
             }
         }
@@ -458,11 +459,12 @@
                     }
                 )
                 if(visualize.value){
-                if(loopCounter%10==0)
-                {
-                    await delay(delayTime.value);
-                }        
-                cell_container[newNeighbors[i][0]][newNeighbors[i][1]].background="red"};
+                    if(loopCounter%delayTime.value==0)
+                    {
+                        await delay(10);
+                    }        
+                    cell_container[newNeighbors[i][0]][newNeighbors[i][1]].background="red"
+                };
                 visited.add(cordString(newNeighbors[i]));
             }
             loopCounter+=1;
@@ -479,9 +481,11 @@
         const queue = [currentNode];
         console.log("BFS RUNNING")
         visited.set(currentNode, null);
+        let loopiteraitons = 0;
         while(queue.length > 0)
         {
-            if(visualize.value){await delay(delayTime.value)};
+            loopiteraitons+=1;
+            if(visualize.value&&loopiteraitons%delayTime.value===0){await delay(10)};
             currentNode = queue.shift();
             if(cordString(currentNode)==cordString(endingNode))
             {   
@@ -517,6 +521,8 @@
     {
         display:grid;
         background: black;
+        width:400;
+        height: 400;
     }
     .functional_container
     {
